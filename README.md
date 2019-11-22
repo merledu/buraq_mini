@@ -1,5 +1,10 @@
 # RISC-V 5-stage Pipelined Core
 ### Designed by Muhammad Hadir Khan
+\
+\
+![alt text](https://github.com/merledu/5-stage-Pipelined-CPU/blob/master/Pipeline.png)
+\
+\
 First of all get started by cloning this repository on your machine.  
 ```ruby
 git clone https://github.com/merledu/5-stage-Pipelined-CPU.git
