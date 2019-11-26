@@ -13,6 +13,9 @@ class Decode extends Module {
     val EX_MEM_rd_sel = Input(UInt(5.W))
     val EX_MEM_ctrl_MemRd = Input(UInt(1.W))
     val MEM_WB_ctrl_MemRd = Input(UInt(1.W))
+    val MEM_WB_ctrl_MemToReg = Input(UInt(1.W))
+    val MEM_WB_dataMem_data = Input(SInt(32.W))
+    val MEM_WB_alu_output = Input(SInt(32.W))
     val alu_output = Input(SInt(32.W))
     val EX_MEM_alu_output = Input(SInt(32.W))
     val dmem_memOut = Input(SInt(32.W))
@@ -42,6 +45,7 @@ class Decode extends Module {
   val imm_generation = Module(new ImmediateGeneration())
   val structuralDetector = Module(new StructuralDetector())
   val jalr = Module(new Jalr())
+  val write_back = Module(new WriteBack())
 
   // Initialize Hazard Detection unit
   hazardDetection.io.IF_ID_INST := io.IF_ID_inst
@@ -161,8 +165,13 @@ class Decode extends Module {
   when(hazardDetection.io.ctrl_forward === "b1".U) {
     setControlPinsToZero()
   } .otherwise {
-    sendDefaultControlPinsToID_EX()
+    sendDefaultControlPins()
   }
+
+  // Initialize Write Back
+  write_back.io.MEM_WB_MemToReg := io.MEM_WB_ctrl_MemToReg
+  write_back.io.MEM_WB_dataMem_data := io.MEM_WB_dataMem_data
+  write_back.io.MEM_WB_alu_output := io.MEM_WB_alu_output
 
 
 
@@ -171,6 +180,8 @@ class Decode extends Module {
   reg_file.io.rs2_sel := io.IF_ID_inst(24, 20)
   reg_file.io.regWrite := io.MEM_WB_ctrl_regWr
   reg_file.io.rd_sel := io.MEM_WB_rd_sel
+  reg_file.io.writeData := write_back.io.write_data
+  
 
   // Initialize Immediate Generation
   imm_generation.io.instruction := io.IF_ID_inst
@@ -224,15 +235,18 @@ class Decode extends Module {
     io.ctrl_OpA_sel_out := 0.U
     io.ctrl_OpB_sel_out := 0.U
     io.ctrl_next_pc_sel_out := 0.U
-    ID_EX.io.ctrl_MemWr_in := 0.U
-    ID_EX.io.ctrl_MemRd_in := 0.U
-    ID_EX.io.ctrl_Branch_in := 0.U
-    ID_EX.io.ctrl_RegWr_in := 0.U
-    ID_EX.io.ctrl_MemToReg_in := 0.U
-    ID_EX.io.ctrl_AluOp_in := 0.U
-    ID_EX.io.ctrl_OpA_sel_in := 0.U
-    ID_EX.io.ctrl_OpB_sel_in := 0.U
-    ID_EX.io.ctrl_nextPc_sel_in := 0.U
+  }
+
+  def sendDefaultControlPins() : Unit = {
+    io.ctrl_MemWr_out := control.io.out_memWrite
+    io.ctrl_MemRd_out := control.io.out_memRead
+    io.ctrl_Branch_out := control.io.out_branch
+    io.ctrl_RegWr_out := control.io.out_regWrite
+    io.ctrl_MemToReg_out := control.io.out_memToReg
+    io.ctrl_AluOp_out := control.io.out_aluOp
+    io.ctrl_OpA_sel_out := control.io.out_operand_a_sel
+    io.ctrl_OpB_sel_out := control.io.out_operand_b_sel
+    io.ctrl_next_pc_sel_out := control.io.out_next_pc_sel
   }
 
 

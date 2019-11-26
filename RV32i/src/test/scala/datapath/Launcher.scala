@@ -125,6 +125,16 @@ object Launcher {
         Driver.execute(() => new Fetch(), manager) {
           (c) => new FetchTests(c)
         }
+      },
+      "Decode" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new Decode(), manager) {
+          (c) => new DecodeTests(c)
+        }
+      },
+      "WriteBack" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new WriteBack(), manager) {
+          (c) => new WriteBackTests(c)
+        }
       }
 
   )
