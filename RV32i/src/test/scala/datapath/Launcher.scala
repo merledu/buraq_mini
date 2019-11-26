@@ -120,8 +120,12 @@ object Launcher {
         Driver.execute(() => new StructuralDetector(), manager) {
           (c) => new StructuralDetectorTests(c)
         }
+      },
+      "Fetch" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new Fetch(), manager) {
+          (c) => new FetchTests(c)
+        }
       }
-
 
   )
   def main(args: Array[String]): Unit = {

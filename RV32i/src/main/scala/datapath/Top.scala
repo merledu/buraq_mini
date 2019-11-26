@@ -13,8 +13,6 @@ class Top extends Module {
     val alu_control = Module(new AluControl())
     val imm_generation = Module(new ImmediateGeneration())
     val jalr = Module(new Jalr())
-    val pc = Module(new Pc())
-    val imem = Module(new InstructionMem())
     val dmem = Module(new DataMem())
     val IF_ID = Module(new IF_ID())
     val ID_EX = Module(new ID_EX())
@@ -26,54 +24,26 @@ class Top extends Module {
     val branchLogic = Module(new BranchLogic())
     val decodeForwardUnit = Module(new DecodeForwardUnit())
     val structuralDetector = Module(new StructuralDetector())
+    val fetch = Module(new Fetch())
 
 
     // *********** ----------- INSTRUCTION FETCH (IF) STAGE ----------- ********* //
 
-    imem.io.wrAddr := pc.io.out(11,2).asUInt
-    IF_ID.io.pc_in := pc.io.out
-    IF_ID.io.pc4_in := pc.io.pc4
+    fetch.io.sb_imm := imm_generation.io.sb_imm
+    fetch.io.uj_imm := imm_generation.io.uj_imm
+    fetch.io.jalr_imm := jalr.io.output
+    fetch.io.ctrl_next_pc_sel := control.io.out_next_pc_sel
+    fetch.io.ctrl_out_branch := control.io.out_branch
+    fetch.io.branchLogic_output := branchLogic.io.output
+    fetch.io.hazardDetection_pc_out := hazardDetection.io.pc_out
+    fetch.io.hazardDetection_inst_out := hazardDetection.io.inst_out
+    fetch.io.hazardDetection_current_pc_out := hazardDetection.io.current_pc_out
+    fetch.io.hazardDetection_pc_forward := hazardDetection.io.pc_forward
+    fetch.io.hazardDetection_inst_forward := hazardDetection.io.inst_forward
 
-    // The Mux before the IF_ID Pipeline register which selects the instruction input
-    // either from the instruction memory or from the hazard detection unit
-    when(hazardDetection.io.inst_forward === "b1".U) {
-      IF_ID.io.inst_in := hazardDetection.io.inst_out
-      IF_ID.io.pc_in := hazardDetection.io.current_pc_out
-    } .otherwise {
-        IF_ID.io.inst_in := imem.io.readData
-    }
-
-    // The Mux before the pc which selects the input to the pc
-    // either from the hazard detection unit or from the adder +4
-    when(hazardDetection.io.pc_forward === "b1".U) {
-      pc.io.in := hazardDetection.io.pc_out
-    } .otherwise {
-        when(control.io.out_next_pc_sel === "b01".U) {
-          when(branchLogic.io.output === 1.U && control.io.out_branch === 1.U) {
-            pc.io.in := imm_generation.io.sb_imm
-            IF_ID.io.pc_in := 0.S
-            IF_ID.io.pc4_in := 0.S
-            IF_ID.io.inst_in := 0.U
-          } .otherwise {
-            pc.io.in := pc.io.pc4
-          }
-
-        } .elsewhen(control.io.out_next_pc_sel === "b10".U) {
-          pc.io.in := imm_generation.io.uj_imm
-          IF_ID.io.pc_in := 0.S
-          IF_ID.io.pc4_in := 0.S
-          IF_ID.io.inst_in := 0.U
-        } .elsewhen(control.io.out_next_pc_sel === "b11".U) {
-          pc.io.in := jalr.io.output
-          IF_ID.io.pc_in := 0.S
-          IF_ID.io.pc4_in := 0.S
-          IF_ID.io.inst_in := 0.U
-        }
-          .otherwise {
-          pc.io.in := pc.io.pc4
-        }
-
-    }
+    IF_ID.io.pc_in := fetch.io.pc_out
+    IF_ID.io.pc4_in := fetch.io.pc4_out
+    IF_ID.io.inst_in := fetch.io.inst_out
 
 
     // *********** ----------- INSTRUCTION DECODE (ID) STAGE ----------- ********* //
@@ -81,7 +51,7 @@ class Top extends Module {
     initializeHazardDetection()
     initializeControl()
 
-    // Initializing Branch Forward Unit
+    // Initializing Decode Forward Unit
     decodeForwardUnit.io.ID_EX_REGRD := ID_EX.io.rd_sel_out
     decodeForwardUnit.io.ID_EX_MEMRD := ID_EX.io.ctrl_MemRd_out
     decodeForwardUnit.io.EX_MEM_REGRD := EX_MEM.io.ex_mem_rdSel_output
@@ -192,10 +162,6 @@ class Top extends Module {
         sendDefaultControlPinsToID_EX()
     }
 
-
-    // Sending the current pc value in the next ID/EX pipeline register
-    // ID_EX.io.IF_ID_pc := IF_ID.io.pc_out
-
     initializeRegisterFile()
 
     initializeImmediateGeneration()
@@ -251,173 +217,6 @@ class Top extends Module {
         EX_MEM.io.ID_EX_RS2 := ID_EX.io.rs2_out
       }
     }
-
-  // Forwarding unit conditions here. If issue arises in testing we will uncomment the below code
-//    when(forwardUnit.io.forward_a === "b01".U && forwardUnit.io.forward_b === "b00".U) {
-//         // For operand A
-//         when(ID_EX.io.ctrl_OpA_sel_out === "b10".U) {
-//           // JAL instruction
-//           alu.io.oper_a := ID_EX.io.pc4_out
-//         } .otherwise {
-//           alu.io.oper_a := EX_MEM.io.ex_mem_alu_output
-//         }
-//         // For operand B
-//         EX_MEM.io.ID_EX_RS2 := EX_MEM.io.ex_mem_alu_output
-//         when(ID_EX.io.ctrl_OpB_sel_out === "b1".U) {  // This second when is due to another mux that selects the register from the register File or from the immediate generation value
-//           alu.io.oper_b := ID_EX.io.imm_out
-//         } .otherwise {
-//           alu.io.oper_b := ID_EX.io.rs2_out
-//         }
-//       } .elsewhen(forwardUnit.io.forward_a === "b00".U && forwardUnit.io.forward_b === "b01".U) {
-//         when(ID_EX.io.ctrl_OpA_sel_out === "b10".U) {
-//           alu.io.oper_a := ID_EX.io.pc4_out
-//         } .otherwise {
-//           alu.io.oper_a := ID_EX.io.rs1_out // The forwarding unit tells that there is no dependence so directly wire the register file value to the alu input A.
-//         }
-//         EX_MEM.io.ID_EX_RS2 := EX_MEM.io.ex_mem_alu_output
-//         when(ID_EX.io.ctrl_OpB_sel_out === "b1".U) {  // This second when is due to another mux that selects the register from the pipeline register or from the immediate generation value
-//           alu.io.oper_b := ID_EX.io.imm_out
-//         } .otherwise {
-//           alu.io.oper_b := EX_MEM.io.ex_mem_alu_output
-//         }
-//       } .elsewhen(forwardUnit.io.forward_a === "b01".U && forwardUnit.io.forward_b === "b01".U) {
-//         when(ID_EX.io.ctrl_OpA_sel_out === "b10".U) {
-//           alu.io.oper_a := ID_EX.io.pc4_out
-//         } .otherwise {
-//           alu.io.oper_a := EX_MEM.io.ex_mem_alu_output
-//         }
-//         EX_MEM.io.ID_EX_RS2 := EX_MEM.io.ex_mem_alu_output
-//         when(ID_EX.io.ctrl_OpB_sel_out === "b1".U) {  // This second when is due to another mux that selects the register from the pipeline register or from the immediate generation value
-//           alu.io.oper_b := ID_EX.io.imm_out
-//         } .otherwise {
-//           alu.io.oper_b := EX_MEM.io.ex_mem_alu_output
-//         }
-//       } .elsewhen(forwardUnit.io.forward_a === "b10".U && forwardUnit.io.forward_b === "b00".U) {
-//         // FOR OPERAND A
-//         when(ID_EX.io.ctrl_OpA_sel_out === "b10".U) {
-//           alu.io.oper_a := ID_EX.io.pc4_out
-//         } .otherwise {
-//           when(MEM_WB.io.mem_wb_memToReg_output === "b1".U) {
-//             alu.io.oper_a := MEM_WB.io.mem_wb_dataMem_data
-//           }.otherwise {
-//             alu.io.oper_a := MEM_WB.io.mem_wb_alu_output
-//           }
-//         }
-//         // FOR OPERAND B
-//         EX_MEM.io.ID_EX_RS2 := MEM_WB.io.mem_wb_alu_output
-//         when(ID_EX.io.ctrl_OpB_sel_out === "b1".U) {  // This second when is due to another mux that selects the register from the register File or from the immediate generation value
-//           alu.io.oper_b := ID_EX.io.imm_out
-//         } .otherwise {
-//           alu.io.oper_b := ID_EX.io.rs2_out
-//         }
-//       } .elsewhen(forwardUnit.io.forward_a === "b00".U && forwardUnit.io.forward_b === "b10".U) {
-//         // FOR OPERAND A
-//         when(ID_EX.io.ctrl_OpA_sel_out === "b10".U) {
-//           alu.io.oper_a := ID_EX.io.pc4_out
-//         } .otherwise {
-//           alu.io.oper_a := ID_EX.io.rs1_out
-//         }
-//         // FORWARDING MEM/WB DATA TO RS2 OF EX/MEM
-//         when(MEM_WB.io.mem_wb_memToReg_output === "b1".U) {
-//           EX_MEM.io.ID_EX_RS2 := MEM_WB.io.mem_wb_dataMem_data
-//         } .otherwise {
-//           EX_MEM.io.ID_EX_RS2 := MEM_WB.io.mem_wb_alu_output
-//         }
-//         // FOR OPERAND B
-//         when(ID_EX.io.ctrl_OpB_sel_out === "b1".U) {  // This second when is due to another mux that selects the register from the pipeline register or from the immediate generation value
-//           alu.io.oper_b := ID_EX.io.imm_out
-//         } .otherwise {
-//           when(MEM_WB.io.mem_wb_memToReg_output === "b1".U) {
-//             alu.io.oper_b := MEM_WB.io.mem_wb_dataMem_data
-//           } .otherwise {
-//             alu.io.oper_b := MEM_WB.io.mem_wb_alu_output
-//           }
-//         }
-//       } .elsewhen(forwardUnit.io.forward_a === "b10".U && forwardUnit.io.forward_b === "b10".U) {
-//         // FOR OPERAND A
-//         when(ID_EX.io.ctrl_OpA_sel_out === "b10".U) {
-//           alu.io.oper_a := ID_EX.io.pc4_out
-//         } .otherwise {
-//           when(MEM_WB.io.mem_wb_memToReg_output === "b1".U) {
-//             alu.io.oper_a := MEM_WB.io.mem_wb_dataMem_data
-//           }.otherwise {
-//             alu.io.oper_a := MEM_WB.io.mem_wb_alu_output
-//           }
-//         }
-//         // FORWARDING MEM/WB DATA TO RS2 OF EX/MEM
-//         when(MEM_WB.io.mem_wb_memToReg_output === "b1".U) {
-//           EX_MEM.io.ID_EX_RS2 := MEM_WB.io.mem_wb_dataMem_data
-//         } .otherwise {
-//           EX_MEM.io.ID_EX_RS2 := MEM_WB.io.mem_wb_alu_output
-//         }
-//         // FOR OPERAND B
-//         when(ID_EX.io.ctrl_OpB_sel_out === "b1".U) {  // This second when is due to another mux that selects the register from the pipeline register or from the immediate generation value
-//           alu.io.oper_b := ID_EX.io.imm_out
-//         } .otherwise {
-//           when(MEM_WB.io.mem_wb_memToReg_output === "b1".U) {
-//             alu.io.oper_b := MEM_WB.io.mem_wb_dataMem_data
-//           } .otherwise {
-//             alu.io.oper_b := MEM_WB.io.mem_wb_alu_output
-//           }
-//         }
-//       } .elsewhen(forwardUnit.io.forward_a === "b10".U && forwardUnit.io.forward_b === "b01".U) {
-//         // FOR OPERAND A
-//         when(ID_EX.io.ctrl_OpA_sel_out === "b10".U) {
-//           alu.io.oper_a := ID_EX.io.pc4_out
-//         } .otherwise {
-//           when(MEM_WB.io.mem_wb_memToReg_output === "b1".U) {
-//             alu.io.oper_a := MEM_WB.io.mem_wb_dataMem_data
-//           }.otherwise {
-//             alu.io.oper_a := MEM_WB.io.mem_wb_alu_output
-//           }
-//         }
-//         // FOR OPERAND B
-//         EX_MEM.io.ID_EX_RS2 := EX_MEM.io.ex_mem_alu_output
-//         when(ID_EX.io.ctrl_OpB_sel_out === "b1".U) {  // This second when is due to another mux that selects the register from the pipeline register or from the immediate generation value
-//           alu.io.oper_b := ID_EX.io.imm_out
-//         } .otherwise {
-//           alu.io.oper_b := EX_MEM.io.ex_mem_alu_output
-//         }
-//       } .elsewhen(forwardUnit.io.forward_a === "b01".U && forwardUnit.io.forward_b === "b10".U) {
-//         // FOR OPERAND A
-//         when(ID_EX.io.ctrl_OpA_sel_out === "b10".U) {
-//           alu.io.oper_a := ID_EX.io.pc4_out
-//         } .otherwise {
-//           alu.io.oper_a := EX_MEM.io.ex_mem_alu_output
-//         }
-//         // FORWARDING MEM/WB DATA TO RS2 OF EX/MEM
-//         when(MEM_WB.io.mem_wb_memToReg_output === "b1".U) {
-//           EX_MEM.io.ID_EX_RS2 := MEM_WB.io.mem_wb_dataMem_data
-//         } .otherwise {
-//           EX_MEM.io.ID_EX_RS2 := MEM_WB.io.mem_wb_alu_output
-//         }
-//         // FOR OPERAND B
-//         when(ID_EX.io.ctrl_OpB_sel_out === "b1".U) {  // This second when is due to another mux that selects the register from the pipeline register or from the immediate generation value
-//           alu.io.oper_b := ID_EX.io.imm_out
-//         } .otherwise {
-//           when(MEM_WB.io.mem_wb_memToReg_output === "b1".U) {
-//             alu.io.oper_b := MEM_WB.io.mem_wb_dataMem_data
-//           } .otherwise {
-//             alu.io.oper_b := MEM_WB.io.mem_wb_alu_output
-//           }
-//         }
-//       }
-//         .otherwise {
-//           when(ID_EX.io.ctrl_OpA_sel_out === "b10".U) {
-//             alu.io.oper_a := ID_EX.io.pc4_out
-//           } .otherwise {
-//             // FOR OPERAND A
-//             alu.io.oper_a := ID_EX.io.rs1_out
-//           }
-//           // FOR OPERAND B
-//           EX_MEM.io.ID_EX_RS2 := ID_EX.io.rs2_out
-//           when(ID_EX.io.ctrl_OpB_sel_out === "b1".U) {
-//             alu.io.oper_b := ID_EX.io.imm_out
-//           } .otherwise {
-//             alu.io.oper_b := ID_EX.io.rs2_out
-//           }
-//         }
-
 
 
     initializeAluControl()
