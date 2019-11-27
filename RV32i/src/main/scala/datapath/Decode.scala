@@ -13,12 +13,10 @@ class Decode extends Module {
     val EX_MEM_rd_sel = Input(UInt(5.W))
     val EX_MEM_ctrl_MemRd = Input(UInt(1.W))
     val MEM_WB_ctrl_MemRd = Input(UInt(1.W))
-    val MEM_WB_ctrl_MemToReg = Input(UInt(1.W))
-    val MEM_WB_dataMem_data = Input(SInt(32.W))
-    val MEM_WB_alu_output = Input(SInt(32.W))
     val alu_output = Input(SInt(32.W))
     val EX_MEM_alu_output = Input(SInt(32.W))
     val dmem_memOut = Input(SInt(32.W))
+    val writeback_write_data = Input(SInt(32.W))
 
     val pc_out = Output(SInt(32.W))
     val pc4_out = Output(SInt(32.W))
@@ -26,6 +24,15 @@ class Decode extends Module {
     val rs1_out = Output(SInt(32.W))
     val rs2_out = Output(SInt(32.W))
     val imm_out = Output(SInt(32.W))
+    val sb_imm = Output(SInt(32.W))
+    val uj_imm = Output(SInt(32.W))
+    val jalr_output = Output(SInt(32.W))
+    val branchLogic_output = Output(UInt(1.W))
+    val hazardDetection_pc_out = Output(SInt(32.W))
+    val hazardDetection_inst_out = Output(UInt(32.W))
+    val hazardDetection_current_pc_out = Output(SInt(32.W))
+    val hazardDetection_pc_forward = Output(UInt(1.W))
+    val hazardDetection_inst_forward = Output(UInt(1.W))
     val ctrl_MemWr_out = Output(UInt(1.W))
     val ctrl_MemRd_out = Output(UInt(1.W))
     val ctrl_Branch_out = Output(UInt(1.W))
@@ -45,7 +52,7 @@ class Decode extends Module {
   val imm_generation = Module(new ImmediateGeneration())
   val structuralDetector = Module(new StructuralDetector())
   val jalr = Module(new Jalr())
-  val write_back = Module(new WriteBack())
+
 
   // Initialize Hazard Detection unit
   hazardDetection.io.IF_ID_INST := io.IF_ID_inst
@@ -53,6 +60,13 @@ class Decode extends Module {
   hazardDetection.io.ID_EX_REGRD := io.ID_EX_rd_sel
   hazardDetection.io.pc_in := io.IF_ID_pc4
   hazardDetection.io.current_pc := io.IF_ID_pc
+
+  // Sending hazard detection outputs for Fetch
+  io.hazardDetection_pc_out := hazardDetection.io.pc_out
+  io.hazardDetection_current_pc_out := hazardDetection.io.current_pc_out
+  io.hazardDetection_pc_forward := hazardDetection.io.pc_forward
+  io.hazardDetection_inst_out := hazardDetection.io.inst_out
+  io.hazardDetection_inst_forward := hazardDetection.io.inst_forward
 
   // Initialize Control Unit
   control.io.in_opcode := io.IF_ID_inst(6, 0)
@@ -158,6 +172,8 @@ class Decode extends Module {
 
   jalr.io.input_b := imm_generation.io.i_imm
 
+  // Sending the branch logic unit output for Fetch
+  io.branchLogic_output := branchLogic.io.output
 
   // The Mux after the Control module which selects the control inputs of
   // the ID/EX Pipeline register either from the Control or default 0 values
@@ -168,11 +184,6 @@ class Decode extends Module {
     sendDefaultControlPins()
   }
 
-  // Initialize Write Back
-  write_back.io.MEM_WB_MemToReg := io.MEM_WB_ctrl_MemToReg
-  write_back.io.MEM_WB_dataMem_data := io.MEM_WB_dataMem_data
-  write_back.io.MEM_WB_alu_output := io.MEM_WB_alu_output
-
 
 
   // Initialize Register File
@@ -180,12 +191,17 @@ class Decode extends Module {
   reg_file.io.rs2_sel := io.IF_ID_inst(24, 20)
   reg_file.io.regWrite := io.MEM_WB_ctrl_regWr
   reg_file.io.rd_sel := io.MEM_WB_rd_sel
-  reg_file.io.writeData := write_back.io.write_data
+  reg_file.io.writeData := io.writeback_write_data
   
 
   // Initialize Immediate Generation
   imm_generation.io.instruction := io.IF_ID_inst
   imm_generation.io.pc := io.IF_ID_pc
+
+  // Sending immediate generation outputs for Fetch
+  io.sb_imm := imm_generation.io.sb_imm
+  io.uj_imm := imm_generation.io.uj_imm
+  io.jalr_output := jalr.io.output
 
   // Initialize Structural Hazard Detector
   structuralDetector.io.rs1_sel := io.IF_ID_inst(19, 15)

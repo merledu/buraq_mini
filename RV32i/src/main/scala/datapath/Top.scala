@@ -26,21 +26,22 @@ class Top extends Module {
     //val structuralDetector = Module(new StructuralDetector())
     val fetch = Module(new Fetch())
     val decode = Module(new Decode())
+    val writeback = Module(new WriteBack())
 
 
     // *********** ----------- INSTRUCTION FETCH (IF) STAGE ----------- ********* //
 
-    fetch.io.sb_imm := imm_generation.io.sb_imm
-    fetch.io.uj_imm := imm_generation.io.uj_imm
-    fetch.io.jalr_imm := jalr.io.output
-    fetch.io.ctrl_next_pc_sel := control.io.out_next_pc_sel
-    fetch.io.ctrl_out_branch := control.io.out_branch
-    fetch.io.branchLogic_output := branchLogic.io.output
-    fetch.io.hazardDetection_pc_out := hazardDetection.io.pc_out
-    fetch.io.hazardDetection_inst_out := hazardDetection.io.inst_out
-    fetch.io.hazardDetection_current_pc_out := hazardDetection.io.current_pc_out
-    fetch.io.hazardDetection_pc_forward := hazardDetection.io.pc_forward
-    fetch.io.hazardDetection_inst_forward := hazardDetection.io.inst_forward
+    fetch.io.sb_imm := decode.io.sb_imm
+    fetch.io.uj_imm := decode.io.uj_imm
+    fetch.io.jalr_imm := decode.io.jalr_output
+    fetch.io.ctrl_next_pc_sel := decode.io.ctrl_next_pc_sel_out
+    fetch.io.ctrl_out_branch := decode.io.ctrl_Branch_out
+    fetch.io.branchLogic_output := decode.io.branchLogic_output
+    fetch.io.hazardDetection_pc_out := decode.io.hazardDetection_pc_out
+    fetch.io.hazardDetection_inst_out := decode.io.hazardDetection_inst_out
+    fetch.io.hazardDetection_current_pc_out := decode.io.hazardDetection_current_pc_out
+    fetch.io.hazardDetection_pc_forward := decode.io.hazardDetection_pc_forward
+    fetch.io.hazardDetection_inst_forward := decode.io.hazardDetection_inst_forward
 
     IF_ID.io.pc_in := fetch.io.pc_out
     IF_ID.io.pc4_in := fetch.io.pc4_out
@@ -59,9 +60,7 @@ class Top extends Module {
     decode.io.EX_MEM_rd_sel := EX_MEM.io.ex_mem_rdSel_output
     decode.io.EX_MEM_ctrl_MemRd := EX_MEM.io.ex_mem_memRd_out
     decode.io.MEM_WB_ctrl_MemRd := MEM_WB.io.mem_wb_memRd_output
-    decode.io.MEM_WB_ctrl_MemToReg := MEM_WB.io.mem_wb_memToReg_output
-    decode.io.MEM_WB_dataMem_data := MEM_WB.io.mem_wb_dataMem_data
-    decode.io.MEM_WB_alu_output := MEM_WB.io.mem_wb_alu_output
+    decode.io.writeback_write_data := writeback.io.write_data
     decode.io.alu_output := alu.io.output
     decode.io.EX_MEM_alu_output := EX_MEM.io.ex_mem_alu_output
     decode.io.dmem_memOut := dmem.io.memOut
@@ -88,128 +87,6 @@ class Top extends Module {
     ID_EX.io.rs1_sel_in := decode.io.inst_out(19, 15)
     ID_EX.io.rs2_sel_in := decode.io.inst_out(24, 20)
 
-    //initializeHazardDetection()
-    //initializeControl()
-
-    // Initializing Decode Forward Unit
-    // decodeForwardUnit.io.ID_EX_REGRD := ID_EX.io.rd_sel_out
-    // decodeForwardUnit.io.ID_EX_MEMRD := ID_EX.io.ctrl_MemRd_out
-    // decodeForwardUnit.io.EX_MEM_REGRD := EX_MEM.io.ex_mem_rdSel_output
-    // decodeForwardUnit.io.MEM_WB_REGRD := MEM_WB.io.mem_wb_rdSel_output
-    // decodeForwardUnit.io.EX_MEM_MEMRD := EX_MEM.io.ex_mem_memRd_out
-    // decodeForwardUnit.io.MEM_WB_MEMRD := MEM_WB.io.mem_wb_memRd_output
-    // decodeForwardUnit.io.rs1_sel := IF_ID.io.inst_out(19, 15)
-    // decodeForwardUnit.io.rs2_sel := IF_ID.io.inst_out(24, 20)
-    // decodeForwardUnit.io.ctrl_branch := control.io.out_branch
-
-
-    //branchLogic.io.in_func3 := IF_ID.io.inst_out(14,12)
-
-    // FOR REGISTER RS1 in BRANCH LOGIC UNIT and JALR UNIT
-
-    // These forwarding values come only when the Control's branch pin is high which means SB-Type
-    // instruction is in the decode stage so we don't need to forward any values to the JALR unit
-    // Hence for all these conditions we wire JALR unit with register file's output by default.
-    // when(decodeForwardUnit.io.forward_rs1 === "b0000".U) {
-    //   // No hazard just use register file data
-    //   branchLogic.io.in_rs1 := reg_file.io.rs1
-    //   jalr.io.input_a := reg_file.io.rs1
-    // } .elsewhen(decodeForwardUnit.io.forward_rs1 === "b0001".U) {
-    //   // hazard in alu stage forward data from alu output
-    //   branchLogic.io.in_rs1 := alu.io.output
-    //   jalr.io.input_a := reg_file.io.rs1
-    // } .elsewhen(decodeForwardUnit.io.forward_rs1 === "b0010".U) {
-    //   // hazard in EX/MEM stage forward data from EX/MEM.alu_output
-    //   branchLogic.io.in_rs1 := EX_MEM.io.ex_mem_alu_output
-    //   jalr.io.input_a := reg_file.io.rs1
-    // } .elsewhen(decodeForwardUnit.io.forward_rs1 === "b0011".U) {
-    //   // hazard in MEM/WB stage forward data from register file write data which will have correct data from the MEM/WB mux
-    //   branchLogic.io.in_rs1 := reg_file.io.writeData
-    //   jalr.io.input_a := reg_file.io.rs1
-    // } .elsewhen(decodeForwardUnit.io.forward_rs1 === "b0100".U) {
-    //   // hazard in EX/MEM stage and load type instruction so forwarding from data memory data output instead of EX/MEM.alu_output
-    //   branchLogic.io.in_rs1 := dmem.io.memOut
-    //   jalr.io.input_a := reg_file.io.rs1
-    // } .elsewhen(decodeForwardUnit.io.forward_rs1 === "b0101".U) {
-    //   // hazard in MEM/WB stage and load type instruction so forwarding from register file write data which will have the correct output from the mux
-    //   branchLogic.io.in_rs1 := reg_file.io.writeData
-    //   jalr.io.input_a := reg_file.io.rs1
-    // }
-
-    //   // These forwarding values come only when the Control's branch pin is low which means JALR
-    //   // instruction maybe in the decode stage so we don't need to forward any values to the Branch Logic unit
-    //   // Hence for all these conditions we wire Branch Logic unit with register file's output by default.
-
-    //   .elsewhen(decodeForwardUnit.io.forward_rs1 === "b0110".U) {
-    //     // hazard in alu stage forward data from alu output
-    //     jalr.io.input_a := alu.io.output
-    //     branchLogic.io.in_rs1 := reg_file.io.rs1
-    // } .elsewhen(decodeForwardUnit.io.forward_rs1 === "b0111".U) {
-    //     // hazard in EX/MEM stage forward data from EX/MEM.alu_output
-    //     jalr.io.input_a := EX_MEM.io.ex_mem_alu_output
-    //     branchLogic.io.in_rs1 := reg_file.io.rs1
-    // } .elsewhen(decodeForwardUnit.io.forward_rs1 === "b1000".U) {
-    //     // hazard in MEM/WB stage forward data from register file write data which will have correct data from the MEM/WB mux
-    //     jalr.io.input_a := reg_file.io.writeData
-    //     branchLogic.io.in_rs1 := reg_file.io.rs1
-    // } .elsewhen(decodeForwardUnit.io.forward_rs1 === "b1001".U) {
-    //     // hazard in EX/MEM stage and load type instruction so forwarding from data memory data output instead of EX/MEM.alu_output
-    //     jalr.io.input_a := dmem.io.memOut
-    //     branchLogic.io.in_rs1 := reg_file.io.rs1
-    // } .elsewhen(decodeForwardUnit.io.forward_rs1 === "b1010".U) {
-    //     // hazard in MEM/WB stage and load type instruction so forwarding from register file write data which will have the correct output from the mux
-    //     jalr.io.input_a := reg_file.io.writeData
-    //     branchLogic.io.in_rs1 := reg_file.io.rs1
-    // }
-    //   .otherwise {
-    //     branchLogic.io.in_rs1 := reg_file.io.rs1
-    //     jalr.io.input_a := reg_file.io.rs1
-    // }
-
-
-    // // FOR REGISTER RS2 in BRANCH LOGIC UNIT
-    // when(decodeForwardUnit.io.forward_rs2 === "b0000".U) {
-    //   // No hazard just use register file data
-    //   branchLogic.io.in_rs2 := reg_file.io.rs2
-    // } .elsewhen(decodeForwardUnit.io.forward_rs2 === "b0001".U) {
-    //   // hazard in alu stage forward data from alu output
-    //   branchLogic.io.in_rs2 := alu.io.output
-    // } .elsewhen(decodeForwardUnit.io.forward_rs2 === "b0010".U) {
-    //   // hazard in EX/MEM stage forward data from EX/MEM.alu_output
-    //   branchLogic.io.in_rs2 := EX_MEM.io.ex_mem_alu_output
-    // } .elsewhen(decodeForwardUnit.io.forward_rs2 === "b0011".U) {
-    //   // hazard in MEM/WB stage forward data from register file write data which will have correct data from the MEM/WB mux
-    //   branchLogic.io.in_rs2 := reg_file.io.writeData
-    // } .elsewhen(decodeForwardUnit.io.forward_rs2 === "b0100".U) {
-    //   // hazard in EX/MEM stage and load type instruction so forwarding from data memory data output instead of EX/MEM.alu_output
-    //   branchLogic.io.in_rs2 := dmem.io.memOut
-    // } .elsewhen(decodeForwardUnit.io.forward_rs2 === "b0101".U) {
-    //   // hazard in MEM/WB stage and load type instruction so forwarding from register file write data which will have the correct output from the mux
-    //   branchLogic.io.in_rs2 := reg_file.io.writeData
-    // }
-    //   .otherwise {
-    //     branchLogic.io.in_rs2 := reg_file.io.rs2
-    //   }
-
-    //jalr.io.input_b := imm_generation.io.i_imm
-
-    // The Mux after the Control module which selects the control inputs of
-    // the ID/EX Pipeline register either from the Control or default 0 values
-    // for stalling the pipeline one clock cycle.
-    // when(hazardDetection.io.ctrl_forward === "b1".U) {
-    //     setControlPinsToZeroAndForwardToID_EX()
-    // } .otherwise {
-    //     sendDefaultControlPinsToID_EX()
-    // }
-
-
-
-
-    //initializeRegisterFile()
-
-    //initializeImmediateGeneration()
-
-    //initialize_ID_EX_Reg()
 
 
     // *********** ----------- EXECUTION (EX) STAGE ----------- ********* //
@@ -225,7 +102,7 @@ class Top extends Module {
         } .elsewhen(forwardUnit.io.forward_a === "b01".U) {
           alu.io.oper_a := EX_MEM.io.ex_mem_alu_output
         } .elsewhen(forwardUnit.io.forward_a === "b10".U) {
-          alu.io.oper_a := reg_file.io.writeData
+          alu.io.oper_a := writeback.io.write_data
         } .otherwise {
           alu.io.oper_a := ID_EX.io.rs1_out
         }
@@ -239,7 +116,7 @@ class Top extends Module {
       } .elsewhen(forwardUnit.io.forward_b === "b01".U) {
         EX_MEM.io.ID_EX_RS2 := EX_MEM.io.ex_mem_alu_output
       } .elsewhen(forwardUnit.io.forward_b === "b10".U) {
-        EX_MEM.io.ID_EX_RS2 := reg_file.io.writeData
+        EX_MEM.io.ID_EX_RS2 := writeback.io.write_data
       } .otherwise {
         EX_MEM.io.ID_EX_RS2 := ID_EX.io.rs2_out
       }
@@ -253,8 +130,8 @@ class Top extends Module {
         alu.io.oper_b := EX_MEM.io.ex_mem_alu_output
         EX_MEM.io.ID_EX_RS2 := EX_MEM.io.ex_mem_alu_output
       } .elsewhen(forwardUnit.io.forward_b === "b10".U) {
-        alu.io.oper_b := reg_file.io.writeData
-        EX_MEM.io.ID_EX_RS2 := reg_file.io.writeData
+        alu.io.oper_b := writeback.io.write_data
+        EX_MEM.io.ID_EX_RS2 := writeback.io.write_data
       } .otherwise {
         alu.io.oper_b := ID_EX.io.rs2_out
         EX_MEM.io.ID_EX_RS2 := ID_EX.io.rs2_out
@@ -295,6 +172,10 @@ class Top extends Module {
     // } .otherwise {
     //     reg_file.io.writeData := MEM_WB.io.mem_wb_alu_output
     // }
+
+    writeback.io.MEM_WB_MemToReg := MEM_WB.io.mem_wb_memToReg_output
+    writeback.io.MEM_WB_dataMem_data := MEM_WB.io.mem_wb_dataMem_data
+    writeback.io.MEM_WB_alu_output := MEM_WB.io.mem_wb_alu_output
 
 
 
@@ -447,6 +328,6 @@ class Top extends Module {
     // }
 
     // Just for testing
-    io.reg_out := reg_file.io.rs1
+    io.reg_out := writeback.io.write_data
 
 }

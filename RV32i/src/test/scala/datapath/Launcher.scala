@@ -135,6 +135,11 @@ object Launcher {
         Driver.execute(() => new WriteBack(), manager) {
           (c) => new WriteBackTests(c)
         }
+      },
+      "Execute" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new Execute(), manager) {
+          (c) => new ExecuteTests(c)
+        }
       }
 
   )
