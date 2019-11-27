@@ -9,8 +9,8 @@ class Top extends Module {
 
     //val control = Module(new Control())
     //val reg_file = Module(new RegisterFile())
-    val alu = Module(new Alu())
-    val alu_control = Module(new AluControl())
+    //val alu = Module(new Alu())
+    //val alu_control = Module(new AluControl())
     //val imm_generation = Module(new ImmediateGeneration())
     //val jalr = Module(new Jalr())
     val dmem = Module(new DataMem())
@@ -18,7 +18,7 @@ class Top extends Module {
     val ID_EX = Module(new ID_EX())
     val EX_MEM = Module(new EX_MEM())
     val MEM_WB = Module(new MEM_WB())
-    val forwardUnit = Module(new ForwardUnit())
+    //val forwardUnit = Module(new ForwardUnit())
     //val forwardUnitMem = Module(new ForwardUnitMem())
     //val hazardDetection = Module(new HazardDetection())
     //val branchLogic = Module(new BranchLogic())
@@ -26,6 +26,7 @@ class Top extends Module {
     //val structuralDetector = Module(new StructuralDetector())
     val fetch = Module(new Fetch())
     val decode = Module(new Decode())
+    val execute = Module(new Execute())
     val writeback = Module(new WriteBack())
 
 
@@ -61,7 +62,7 @@ class Top extends Module {
     decode.io.EX_MEM_ctrl_MemRd := EX_MEM.io.ex_mem_memRd_out
     decode.io.MEM_WB_ctrl_MemRd := MEM_WB.io.mem_wb_memRd_output
     decode.io.writeback_write_data := writeback.io.write_data
-    decode.io.alu_output := alu.io.output
+    decode.io.alu_output := execute.io.alu_output
     decode.io.EX_MEM_alu_output := EX_MEM.io.ex_mem_alu_output
     decode.io.dmem_memOut := dmem.io.memOut
 
@@ -91,60 +92,43 @@ class Top extends Module {
 
     // *********** ----------- EXECUTION (EX) STAGE ----------- ********* //
 
-    initializeForwardUnit()
+    execute.io.EX_MEM_rd_sel := EX_MEM.io.ex_mem_rdSel_output
+    execute.io.MEM_WB_rd_sel := MEM_WB.io.mem_wb_rdSel_output
+    execute.io.ID_EX_rs1_sel := ID_EX.io.rs1_sel_out
+    execute.io.ID_EX_rs2_sel := ID_EX.io.rs2_sel_out
+    execute.io.EX_MEM_ctrl_RegWr := EX_MEM.io.ex_mem_regWr_out
+    execute.io.MEM_WB_ctrl_RegWr := MEM_WB.io.mem_wb_regWr_output
+    execute.io.ID_EX_ctrl_OpA_sel := ID_EX.io.ctrl_OpA_sel_out
+    execute.io.ID_EX_ctrl_OpB_sel := ID_EX.io.ctrl_OpB_sel_out
+    execute.io.ID_EX_pc4 := ID_EX.io.pc4_out
+    execute.io.ID_EX_rs1 := ID_EX.io.rs1_out
+    execute.io.ID_EX_rs2 := ID_EX.io.rs2_out
+    execute.io.EX_MEM_alu_output := EX_MEM.io.ex_mem_alu_output
+    execute.io.writeback_write_data := writeback.io.write_data
+    execute.io.ID_EX_imm := ID_EX.io.imm_out
+    execute.io.ID_EX_ctrl_AluOp := ID_EX.io.ctrl_AluOp_out
+    execute.io.ID_EX_func7 := ID_EX.io.func7_out
+    execute.io.ID_EX_func3 := ID_EX.io.func3_out
+    execute.io.ID_EX_rd_sel := ID_EX.io.rd_sel_out
+    execute.io.ID_EX_ctrl_MemWr := ID_EX.io.ctrl_MemWr_out
+    execute.io.ID_EX_ctrl_MemRd := ID_EX.io.ctrl_MemRd_out
+    execute.io.ID_EX_ctrl_RegWr := ID_EX.io.ctrl_RegWr_out
+    execute.io.ID_EX_ctrl_MemToReg := ID_EX.io.ctrl_MemToReg_out
 
-  // Controlling Operand A for ALU
-    when (ID_EX.io.ctrl_OpA_sel_out === "b10".U) {
-      alu.io.oper_a := ID_EX.io.pc4_out
-    } .otherwise {
-        when(forwardUnit.io.forward_a === "b00".U) {
-          alu.io.oper_a := ID_EX.io.rs1_out
-        } .elsewhen(forwardUnit.io.forward_a === "b01".U) {
-          alu.io.oper_a := EX_MEM.io.ex_mem_alu_output
-        } .elsewhen(forwardUnit.io.forward_a === "b10".U) {
-          alu.io.oper_a := writeback.io.write_data
-        } .otherwise {
-          alu.io.oper_a := ID_EX.io.rs1_out
-        }
-    }
+    // Passing the ALU output to the EX/MEM pipeline register
+    EX_MEM.io.alu_output := execute.io.alu_output
 
-  // Controlling Operand B for ALU
-    when(ID_EX.io.ctrl_OpB_sel_out === "b1".U) {
-      alu.io.oper_b := ID_EX.io.imm_out
-      when(forwardUnit.io.forward_b === "b00".U) {
-        EX_MEM.io.ID_EX_RS2 := ID_EX.io.rs2_out
-      } .elsewhen(forwardUnit.io.forward_b === "b01".U) {
-        EX_MEM.io.ID_EX_RS2 := EX_MEM.io.ex_mem_alu_output
-      } .elsewhen(forwardUnit.io.forward_b === "b10".U) {
-        EX_MEM.io.ID_EX_RS2 := writeback.io.write_data
-      } .otherwise {
-        EX_MEM.io.ID_EX_RS2 := ID_EX.io.rs2_out
-      }
+    // Passing the rd_sel value in the EX/MEM pipeline register
+    EX_MEM.io.ID_EX_RDSEL := execute.io.rd_sel_out
+    EX_MEM.io.ID_EX_RS2SEL := execute.io.rs2_sel_out
+    EX_MEM.io.ID_EX_RS2 := execute.io.rs2_out
 
+    // Passing the control signals to EX/MEM pipeline register
+    EX_MEM.io.ID_EX_MEMWR := execute.io.ctrl_MemWr_out
+    EX_MEM.io.ID_EX_MEMRD := execute.io.ctrl_MemRd_out
+    EX_MEM.io.ID_EX_REGWR := execute.io.ctrl_RegWr_out
+    EX_MEM.io.ID_EX_MEMTOREG := execute.io.ctrl_MemToReg_out
 
-    } .otherwise {
-      when(forwardUnit.io.forward_b === "b00".U) {
-        alu.io.oper_b := ID_EX.io.rs2_out
-        EX_MEM.io.ID_EX_RS2 := ID_EX.io.rs2_out
-      } .elsewhen(forwardUnit.io.forward_b === "b01".U) {
-        alu.io.oper_b := EX_MEM.io.ex_mem_alu_output
-        EX_MEM.io.ID_EX_RS2 := EX_MEM.io.ex_mem_alu_output
-      } .elsewhen(forwardUnit.io.forward_b === "b10".U) {
-        alu.io.oper_b := writeback.io.write_data
-        EX_MEM.io.ID_EX_RS2 := writeback.io.write_data
-      } .otherwise {
-        alu.io.oper_b := ID_EX.io.rs2_out
-        EX_MEM.io.ID_EX_RS2 := ID_EX.io.rs2_out
-      }
-    }
-
-
-    initializeAluControl()
-
-    // Connecting ALU Control output to ALU input
-    alu.io.aluCtrl := alu_control.io.output
-
-    initialize_EX_MEM_Reg()
 
 
     // *********** ----------- MEMORY (MEM) STAGE ----------- ********* //
@@ -267,35 +251,35 @@ class Top extends Module {
     //     }
     // }
 
-    def initializeForwardUnit() : Unit = {
-        forwardUnit.io.EX_MEM_REGRD := EX_MEM.io.ex_mem_rdSel_output
-        forwardUnit.io.MEM_WB_REGRD := MEM_WB.io.mem_wb_rdSel_output
-        forwardUnit.io.ID_EX_REGRS1 := ID_EX.io.rs1_sel_out
-        forwardUnit.io.ID_EX_REGRS2 := ID_EX.io.rs2_sel_out
-        forwardUnit.io.EX_MEM_REGWR := EX_MEM.io.ex_mem_regWr_out
-        forwardUnit.io.MEM_WB_REGWR := MEM_WB.io.mem_wb_regWr_output
-    }
+//    def initializeForwardUnit() : Unit = {
+//        forwardUnit.io.EX_MEM_REGRD := EX_MEM.io.ex_mem_rdSel_output
+//        forwardUnit.io.MEM_WB_REGRD := MEM_WB.io.mem_wb_rdSel_output
+//        forwardUnit.io.ID_EX_REGRS1 := ID_EX.io.rs1_sel_out
+//        forwardUnit.io.ID_EX_REGRS2 := ID_EX.io.rs2_sel_out
+//        forwardUnit.io.EX_MEM_REGWR := EX_MEM.io.ex_mem_regWr_out
+//        forwardUnit.io.MEM_WB_REGWR := MEM_WB.io.mem_wb_regWr_output
+//    }
 
-    def initializeAluControl() : Unit = {
-        alu_control.io.aluOp := ID_EX.io.ctrl_AluOp_out
-        alu_control.io.func7 := ID_EX.io.func7_out
-        alu_control.io.func3 := ID_EX.io.func3_out
-    }
+//    def initializeAluControl() : Unit = {
+//        alu_control.io.aluOp := ID_EX.io.ctrl_AluOp_out
+//        alu_control.io.func7 := ID_EX.io.func7_out
+//        alu_control.io.func3 := ID_EX.io.func3_out
+//    }
 
-    def initialize_EX_MEM_Reg() : Unit = {
-        // Passing the ALU output to the EX/MEM pipeline register
-        EX_MEM.io.alu_output := alu.io.output
-
-        // Passing the rd_sel value in the EX/MEM pipeline register
-        EX_MEM.io.ID_EX_RDSEL := ID_EX.io.rd_sel_out
-        EX_MEM.io.ID_EX_RS2SEL := ID_EX.io.rs2_sel_out
-
-        // Passing the control signals to EX/MEM pipeline register
-        EX_MEM.io.ID_EX_MEMWR := ID_EX.io.ctrl_MemWr_out
-        EX_MEM.io.ID_EX_MEMRD := ID_EX.io.ctrl_MemRd_out
-        EX_MEM.io.ID_EX_REGWR := ID_EX.io.ctrl_RegWr_out
-        EX_MEM.io.ID_EX_MEMTOREG := ID_EX.io.ctrl_MemToReg_out
-    }
+//    def initialize_EX_MEM_Reg() : Unit = {
+//        // Passing the ALU output to the EX/MEM pipeline register
+//        EX_MEM.io.alu_output := alu.io.output
+//
+//        // Passing the rd_sel value in the EX/MEM pipeline register
+//        EX_MEM.io.ID_EX_RDSEL := ID_EX.io.rd_sel_out
+//        EX_MEM.io.ID_EX_RS2SEL := ID_EX.io.rs2_sel_out
+//
+//        // Passing the control signals to EX/MEM pipeline register
+//        EX_MEM.io.ID_EX_MEMWR := ID_EX.io.ctrl_MemWr_out
+//        EX_MEM.io.ID_EX_MEMRD := ID_EX.io.ctrl_MemRd_out
+//        EX_MEM.io.ID_EX_REGWR := ID_EX.io.ctrl_RegWr_out
+//        EX_MEM.io.ID_EX_MEMTOREG := ID_EX.io.ctrl_MemToReg_out
+//    }
 
     def initialize_MEM_WB_Reg() : Unit = {
         MEM_WB.io.in_alu_output := EX_MEM.io.ex_mem_alu_output
