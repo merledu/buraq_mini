@@ -140,6 +140,11 @@ object Launcher {
         Driver.execute(() => new Execute(), manager) {
           (c) => new ExecuteTests(c)
         }
+      },
+      "Memory" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new Memory(), manager) {
+          (c) => new MemoryTests(c)
+        }
       }
 
   )

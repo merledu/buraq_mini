@@ -3,8 +3,8 @@ import chisel3._
 
 class ID_EX extends Module {
     val io = IO(new Bundle {
-        val IF_ID_pc = Input(SInt(32.W))
-        val IF_ID_pc4 = Input(SInt(32.W))
+        val pc_in = Input(SInt(32.W))
+        val pc4_in = Input(SInt(32.W))
         val rs1_sel_in = Input(UInt(5.W))
         val rs2_sel_in = Input(UInt(5.W))
         val rs1_in = Input(SInt(32.W))
@@ -65,8 +65,8 @@ class ID_EX extends Module {
     val ctrl_nextPc_sel_reg = RegInit(0.U(1.W))
 
 
-    pc_reg := io.IF_ID_pc
-    pc4_reg := io.IF_ID_pc4
+    pc_reg := io.pc_in
+    pc4_reg := io.pc4_in
     rs1_reg := io.rs1_in
     rs2_reg := io.rs2_in
     imm_reg := io.imm
