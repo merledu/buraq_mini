@@ -21,6 +21,11 @@ class Decode extends Module {
     val pc_out = Output(SInt(32.W))
     val pc4_out = Output(SInt(32.W))
     val inst_out = Output(UInt(32.W))
+    val func3_out = Output(UInt(3.W))
+    val func7_out = Output(UInt(1.W))
+    val rd_sel_out = Output(UInt(5.W))
+    val rs1_sel_out = Output(UInt(5.W))
+    val rs2_sel_out = Output(UInt(5.W))
     val rs1_out = Output(SInt(32.W))
     val rs2_out = Output(SInt(32.W))
     val imm_out = Output(SInt(32.W))
@@ -239,7 +244,11 @@ class Decode extends Module {
   io.pc_out := io.IF_ID_pc
   io.pc4_out := io.IF_ID_pc4
   io.inst_out := io.IF_ID_inst
-
+  io.func3_out := io.IF_ID_inst(14,12)
+  io.func7_out := io.IF_ID_inst(30)
+  io.rd_sel_out := io.IF_ID_inst(11,7)
+  io.rs1_sel_out := io.IF_ID_inst(19,15)
+  io.rs2_sel_out := io.IF_ID_inst(24,20)
 
   def setControlPinsToZero() : Unit = {
     io.ctrl_MemWr_out := 0.U

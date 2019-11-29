@@ -74,11 +74,11 @@ class Top extends Module {
 
     ID_EX.io.pc_in := decode.io.pc_out
     ID_EX.io.pc4_in := decode.io.pc4_out
-    ID_EX.io.func3_in := decode.io.inst_out(14,12)
-    ID_EX.io.func7_in := decode.io.inst_out(30)
-    ID_EX.io.rd_sel_in := decode.io.inst_out(11,7)
-    ID_EX.io.rs1_sel_in := decode.io.inst_out(19, 15)
-    ID_EX.io.rs2_sel_in := decode.io.inst_out(24, 20)
+    ID_EX.io.func3_in := decode.io.func3_out
+    ID_EX.io.func7_in := decode.io.func7_out
+    ID_EX.io.rd_sel_in := decode.io.rd_sel_out
+    ID_EX.io.rs1_sel_in := decode.io.rs1_sel_out
+    ID_EX.io.rs2_sel_in := decode.io.rs2_sel_out
 
 
 
