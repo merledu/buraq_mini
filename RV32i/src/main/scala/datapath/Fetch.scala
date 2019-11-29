@@ -3,6 +3,7 @@ import chisel3._
 
 class Fetch extends Module {
   val io = IO(new Bundle {
+    val inst_in = Input(UInt(32.W))
     val sb_imm = Input(SInt(32.W))
     val uj_imm = Input(SInt(32.W))
     val jalr_imm = Input(SInt(32.W))
@@ -14,15 +15,17 @@ class Fetch extends Module {
     val hazardDetection_current_pc_out = Input(SInt(32.W))
     val hazardDetection_pc_forward = Input(UInt(1.W))
     val hazardDetection_inst_forward = Input(UInt(1.W))
+    val wrAddr = Output(UInt(10.W))
     val pc_out = Output(SInt(32.W))
     val pc4_out = Output(SInt(32.W))
     val inst_out = Output(UInt(32.W))
   })
 
   val pc = Module(new Pc())
-  val imem = Module(new InstructionMem())
+  //val imem = Module(new InstructionMem())
 
-  imem.io.wrAddr := pc.io.out(11,2).asUInt
+  //imem.io.wrAddr := pc.io.out(11,2).asUInt
+  io.wrAddr := pc.io.out(11,2).asUInt
   io.pc_out := pc.io.out
   io.pc4_out := pc.io.pc4
 
@@ -31,7 +34,7 @@ class Fetch extends Module {
     io.inst_out := io.hazardDetection_inst_out
     io.pc_out := io.hazardDetection_current_pc_out
   } .otherwise {
-    io.inst_out := imem.io.readData
+    io.inst_out := io.inst_in
   }
 
 

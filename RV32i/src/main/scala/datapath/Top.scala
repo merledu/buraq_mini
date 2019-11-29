@@ -7,7 +7,7 @@ class Top extends Module {
         val reg_out = Output(SInt(32.W))
  })
 
-
+    val imem = Module(new InstructionMem())
     val IF_ID = Module(new IF_ID())
     val ID_EX = Module(new ID_EX())
     val EX_MEM = Module(new EX_MEM())
@@ -15,12 +15,14 @@ class Top extends Module {
     val fetch = Module(new Fetch())
     val decode = Module(new Decode())
     val execute = Module(new Execute())
-    val memory = Module(new Memory())
+    val memory_stage = Module(new Memory())
     val writeback = Module(new WriteBack())
 
 
-    // *********** ----------- INSTRUCTION FETCH (IF) STAGE ----------- ********* //
+    imem.io.wrAddr := fetch.io.wrAddr
 
+    // *********** ----------- INSTRUCTION FETCH (IF) STAGE ----------- ********* //
+    fetch.io.inst_in := imem.io.readData
     fetch.io.sb_imm := decode.io.sb_imm
     fetch.io.uj_imm := decode.io.uj_imm
     fetch.io.jalr_imm := decode.io.jalr_output
@@ -43,17 +45,17 @@ class Top extends Module {
     decode.io.IF_ID_inst := IF_ID.io.inst_out
     decode.io.IF_ID_pc := IF_ID.io.pc_out
     decode.io.IF_ID_pc4 := IF_ID.io.pc4_out
-    decode.io.MEM_WB_ctrl_regWr := MEM_WB.io.mem_wb_regWr_output
-    decode.io.MEM_WB_rd_sel := MEM_WB.io.mem_wb_rdSel_output
+    decode.io.MEM_WB_ctrl_regWr := MEM_WB.io.ctrl_RegWr_out
+    decode.io.MEM_WB_rd_sel := MEM_WB.io.rd_sel_out
     decode.io.ID_EX_ctrl_MemRd := ID_EX.io.ctrl_MemRd_out
     decode.io.ID_EX_rd_sel := ID_EX.io.rd_sel_out
     decode.io.EX_MEM_rd_sel := EX_MEM.io.rd_sel_out
     decode.io.EX_MEM_ctrl_MemRd := EX_MEM.io.ctrl_MemRd_out
-    decode.io.MEM_WB_ctrl_MemRd := MEM_WB.io.mem_wb_memRd_output
+    decode.io.MEM_WB_ctrl_MemRd := MEM_WB.io.ctrl_MemRd_out
     decode.io.writeback_write_data := writeback.io.write_data
     decode.io.alu_output := execute.io.alu_output
     decode.io.EX_MEM_alu_output := EX_MEM.io.alu_output
-    decode.io.dmem_memOut := memory.io.dmem_data
+    decode.io.dmem_memOut := memory_stage.io.dmem_data
 
     ID_EX.io.ctrl_MemWr_in := decode.io.ctrl_MemWr_out
     ID_EX.io.ctrl_MemRd_in := decode.io.ctrl_MemRd_out
@@ -82,11 +84,11 @@ class Top extends Module {
     // *********** ----------- EXECUTION (EX) STAGE ----------- ********* //
 
     execute.io.EX_MEM_rd_sel := EX_MEM.io.rd_sel_out
-    execute.io.MEM_WB_rd_sel := MEM_WB.io.mem_wb_rdSel_output
+    execute.io.MEM_WB_rd_sel := MEM_WB.io.rd_sel_out
     execute.io.ID_EX_rs1_sel := ID_EX.io.rs1_sel_out
     execute.io.ID_EX_rs2_sel := ID_EX.io.rs2_sel_out
     execute.io.EX_MEM_ctrl_RegWr := EX_MEM.io.ctrl_RegWr_out
-    execute.io.MEM_WB_ctrl_RegWr := MEM_WB.io.mem_wb_regWr_output
+    execute.io.MEM_WB_ctrl_RegWr := MEM_WB.io.ctrl_RegWr_out
     execute.io.ID_EX_ctrl_OpA_sel := ID_EX.io.ctrl_OpA_sel_out
     execute.io.ID_EX_ctrl_OpB_sel := ID_EX.io.ctrl_OpB_sel_out
     execute.io.ID_EX_pc4 := ID_EX.io.pc4_out
@@ -122,22 +124,22 @@ class Top extends Module {
 
     // *********** ----------- MEMORY (MEM) STAGE ----------- ********* //
 
-    memory.io.EX_MEM_alu_output := EX_MEM.io.alu_output
-    memory.io.EX_MEM_rd_sel := EX_MEM.io.rd_sel_out
-    memory.io.EX_MEM_RegWr := EX_MEM.io.ctrl_RegWr_out
-    memory.io.EX_MEM_MemRd := EX_MEM.io.ctrl_MemRd_out
-    memory.io.EX_MEM_MemToReg := EX_MEM.io.ctrl_MemToReg_out
-    memory.io.EX_MEM_MemWr := EX_MEM.io.ctrl_MemWr_out
-    memory.io.EX_MEM_rs2 := EX_MEM.io.rs2_out
+    memory_stage.io.EX_MEM_alu_output := EX_MEM.io.alu_output
+    memory_stage.io.EX_MEM_rd_sel := EX_MEM.io.rd_sel_out
+    memory_stage.io.EX_MEM_RegWr := EX_MEM.io.ctrl_RegWr_out
+    memory_stage.io.EX_MEM_MemRd := EX_MEM.io.ctrl_MemRd_out
+    memory_stage.io.EX_MEM_MemToReg := EX_MEM.io.ctrl_MemToReg_out
+    memory_stage.io.EX_MEM_MemWr := EX_MEM.io.ctrl_MemWr_out
+    memory_stage.io.EX_MEM_rs2 := EX_MEM.io.rs2_out
 
 
-    MEM_WB.io.in_alu_output := memory.io.alu_output
-    MEM_WB.io.in_dataMem_data := memory.io.dmem_data
-    MEM_WB.io.EX_MEM_RDSEL := memory.io.rd_sel_out
+    MEM_WB.io.alu_in := memory_stage.io.alu_output
+    MEM_WB.io.dmem_data_in := memory_stage.io.dmem_data
+    MEM_WB.io.rd_sel_in := memory_stage.io.rd_sel_out
 
-    MEM_WB.io.EX_MEM_REGWR := memory.io.ctrl_RegWr_out
-    MEM_WB.io.EX_MEM_MEMRD := memory.io.ctrl_MemRd_out
-    MEM_WB.io.EX_MEM_MEMTOREG := memory.io.ctrl_MemToReg_out
+    MEM_WB.io.ctrl_RegWr_in := memory_stage.io.ctrl_RegWr_out
+    MEM_WB.io.ctrl_MemRd_in := memory_stage.io.ctrl_MemRd_out
+    MEM_WB.io.ctrl_MemToReg_in := memory_stage.io.ctrl_MemToReg_out
 
 
 
@@ -145,9 +147,9 @@ class Top extends Module {
     // *********** ----------- WRITE BACK (WB) STAGE ----------- ********* //
 
 
-    writeback.io.MEM_WB_MemToReg := MEM_WB.io.mem_wb_memToReg_output
-    writeback.io.MEM_WB_dataMem_data := MEM_WB.io.mem_wb_dataMem_data
-    writeback.io.MEM_WB_alu_output := MEM_WB.io.mem_wb_alu_output
+    writeback.io.MEM_WB_MemToReg := MEM_WB.io.ctrl_MemToReg_out
+    writeback.io.MEM_WB_dataMem_data := MEM_WB.io.dmem_data_out
+    writeback.io.MEM_WB_alu_output := MEM_WB.io.alu_output
 
 
     // Just for testing
