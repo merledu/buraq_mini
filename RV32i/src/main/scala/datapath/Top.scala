@@ -8,6 +8,7 @@ class Top extends Module {
  })
 
     val imem = Module(new InstructionMem())
+    val dmem = Module(new DataMem())
     val IF_ID = Module(new IF_ID())
     val ID_EX = Module(new ID_EX())
     val EX_MEM = Module(new EX_MEM())
@@ -55,7 +56,7 @@ class Top extends Module {
     decode.io.writeback_write_data := writeback.io.write_data
     decode.io.alu_output := execute.io.alu_output
     decode.io.EX_MEM_alu_output := EX_MEM.io.alu_output
-    decode.io.dmem_memOut := memory_stage.io.dmem_data
+    decode.io.dmem_memOut := dmem.io.memOut
 
     ID_EX.io.ctrl_MemWr_in := decode.io.ctrl_MemWr_out
     ID_EX.io.ctrl_MemRd_in := decode.io.ctrl_MemRd_out
@@ -132,9 +133,13 @@ class Top extends Module {
     memory_stage.io.EX_MEM_MemWr := EX_MEM.io.ctrl_MemWr_out
     memory_stage.io.EX_MEM_rs2 := EX_MEM.io.rs2_out
 
+    dmem.io.memAddress := memory_stage.io.memAddress
+    dmem.io.memWrite := memory_stage.io.ctrl_MemWr_out
+    dmem.io.memRead := memory_stage.io.ctrl_MemRd_out
+    dmem.io.memData := memory_stage.io.rs2_out
 
     MEM_WB.io.alu_in := memory_stage.io.alu_output
-    MEM_WB.io.dmem_data_in := memory_stage.io.dmem_data
+    MEM_WB.io.dmem_data_in := dmem.io.memOut
     MEM_WB.io.rd_sel_in := memory_stage.io.rd_sel_out
 
     MEM_WB.io.ctrl_RegWr_in := memory_stage.io.ctrl_RegWr_out

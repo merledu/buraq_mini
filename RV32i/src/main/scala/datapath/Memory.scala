@@ -12,7 +12,8 @@ class Memory extends Module {
     val EX_MEM_rs2 = Input(SInt(32.W))
 
     val alu_output = Output(SInt(32.W))
-    val dmem_data = Output(SInt(32.W))
+    val rs2_out = Output(SInt(32.W))
+    val memAddress = Output(UInt(10.W))
     val rd_sel_out = Output(UInt(5.W))
     val ctrl_RegWr_out = Output(UInt(1.W))
     val ctrl_MemRd_out = Output(UInt(1.W))
@@ -21,20 +22,15 @@ class Memory extends Module {
 
   })
 
-    val dmem = Module(new DataMem())
 
     io.alu_output := io.EX_MEM_alu_output
-    io.dmem_data := dmem.io.memOut
+    io.memAddress := io.EX_MEM_alu_output(11, 2).asUInt
+    io.rs2_out := io.EX_MEM_rs2
     io.rd_sel_out := io.EX_MEM_rd_sel
     io.ctrl_RegWr_out := io.EX_MEM_RegWr
     io.ctrl_MemRd_out := io.EX_MEM_MemRd
     io.ctrl_MemToReg_out := io.EX_MEM_MemToReg
     io.ctrl_MemWr_out := io.EX_MEM_MemWr
 
-    //Initialize data memory
-    dmem.io.memAddress := io.EX_MEM_alu_output(11, 2).asUInt
-    dmem.io.memWrite := io.EX_MEM_MemWr
-    dmem.io.memRead := io.EX_MEM_MemRd
-    dmem.io.memData := io.EX_MEM_rs2
 
 }
