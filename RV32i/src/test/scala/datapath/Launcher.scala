@@ -145,6 +145,11 @@ object Launcher {
         Driver.execute(() => new Memory(), manager) {
           (c) => new MemoryTests(c)
         }
+      },
+      "CoreTop" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new CoreTop(), manager) {
+          (c) => new CoreTopTests(c)
+        }
       }
 
   )
