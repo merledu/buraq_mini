@@ -7,19 +7,18 @@ class CoreTop extends Module {
   })
 
   val top = Module(new Top)
-  val imem = Module(new InstructionMem)
-  val dmem = Module(new DataMem)
+  val mem = Module(new Memory)
 
-  imem.io.wrAddr := top.io.imem_wrAddr
-  top.io.imem_data := imem.io.readData
+  mem.io.imem_wrAddr := top.io.imem_wrAddr
+  top.io.imem_data := mem.io.imem_out
 
-  dmem.io.memAddress := top.io.dmem_memAddr
-  dmem.io.memWrite := top.io.dmem_memWr
-  dmem.io.memRead := top.io.dmem_memRd
-  dmem.io.memData := top.io.dmem_memData
+  mem.io.dmem_memAddr := top.io.dmem_memAddr
+  mem.io.dmem_memWr := top.io.dmem_memWr
+  mem.io.dmem_memRd := top.io.dmem_memRd
+  mem.io.dmem_memData := top.io.dmem_memData
 
-  top.io.dmem_data := dmem.io.memOut
+  top.io.dmem_data := mem.io.dmem_out
 
   // Just for simulation
-  io.imem_out := imem.io.readData
+  io.imem_out := mem.io.imem_out
 }

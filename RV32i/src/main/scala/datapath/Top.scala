@@ -13,8 +13,6 @@ class Top extends Module {
         val dmem_memData = Output(SInt(32.W))
  })
 
-    //val imem = Module(new InstructionMem())
-    //val dmem = Module(new DataMem())
     val IF_ID = Module(new IF_ID())
     val ID_EX = Module(new ID_EX())
     val EX_MEM = Module(new EX_MEM())
@@ -22,14 +20,12 @@ class Top extends Module {
     val fetch = Module(new Fetch())
     val decode = Module(new Decode())
     val execute = Module(new Execute())
-    val memory_stage = Module(new Memory())
+    val memory_stage = Module(new MemoryStage())
     val writeback = Module(new WriteBack())
 
 
-    //imem.io.wrAddr := fetch.io.wrAddr
     io.imem_wrAddr := fetch.io.wrAddr
     // *********** ----------- INSTRUCTION FETCH (IF) STAGE ----------- ********* //
-    //fetch.io.inst_in := imem.io.readData
     fetch.io.inst_in := io.imem_data
     fetch.io.sb_imm := decode.io.sb_imm
     fetch.io.uj_imm := decode.io.uj_imm
@@ -139,11 +135,6 @@ class Top extends Module {
     memory_stage.io.EX_MEM_MemToReg := EX_MEM.io.ctrl_MemToReg_out
     memory_stage.io.EX_MEM_MemWr := EX_MEM.io.ctrl_MemWr_out
     memory_stage.io.EX_MEM_rs2 := EX_MEM.io.rs2_out
-
-//    dmem.io.memAddress := memory_stage.io.memAddress
-//    dmem.io.memWrite := memory_stage.io.ctrl_MemWr_out
-//    dmem.io.memRead := memory_stage.io.ctrl_MemRd_out
-//    dmem.io.memData := memory_stage.io.rs2_out
 
     io.dmem_memWr := memory_stage.io.ctrl_MemWr_out
     io.dmem_memRd := memory_stage.io.ctrl_MemRd_out

@@ -141,17 +141,21 @@ object Launcher {
           (c) => new ExecuteTests(c)
         }
       },
-      "Memory" -> { (manager: TesterOptionsManager) =>
-        Driver.execute(() => new Memory(), manager) {
-          (c) => new MemoryTests(c)
+      "MemoryStage" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new MemoryStage(), manager) {
+          (c) => new MemoryStageTests(c)
         }
       },
       "CoreTop" -> { (manager: TesterOptionsManager) =>
         Driver.execute(() => new CoreTop(), manager) {
           (c) => new CoreTopTests(c)
         }
+      },
+      "Memory" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new Memory(), manager) {
+          (c) => new MemoryTests(c)
+        }
       }
-
   )
   def main(args: Array[String]): Unit = {
     TutorialRunner("examples", examples, args)

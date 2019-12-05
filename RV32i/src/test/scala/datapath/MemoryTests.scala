@@ -2,11 +2,10 @@ package datapath
 import chisel3.iotesters.PeekPokeTester
 
 class MemoryTests(c: Memory) extends PeekPokeTester(c) {
-  poke(c.io.EX_MEM_alu_output, 1)
-  poke(c.io.EX_MEM_rd_sel, 1)
-  poke(c.io.EX_MEM_RegWr, 1)
-  poke(c.io.EX_MEM_MemRd, 1)
-  poke(c.io.EX_MEM_MemToReg, 1)
-  poke(c.io.EX_MEM_MemWr, 1)
-  poke(c.io.EX_MEM_rs2, 1)
+  poke(c.io.imem_wrAddr, 0)
+  poke(c.io.dmem_memAddr, 0)
+  poke(c.io.dmem_memWr, 0)
+  poke(c.io.dmem_memRd, 0)
+  poke(c.io.dmem_memData, 0)
+  step(1)
 }
