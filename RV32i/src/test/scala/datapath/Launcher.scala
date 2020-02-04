@@ -46,9 +46,9 @@ object Launcher {
           (c) => new RegisterFileTests(c)
         }
       },
-      "Top" -> { (manager: TesterOptionsManager) =>
-        Driver.execute(() => new Top(), manager) {
-          (c) => new TopTests(c)
+      "Core" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new Core(), manager) {
+          (c) => new CoreTests(c)
         }
       },
       "Pc" -> { (manager: TesterOptionsManager) =>
@@ -146,9 +146,9 @@ object Launcher {
           (c) => new MemoryStageTests(c)
         }
       },
-      "CoreTop" -> { (manager: TesterOptionsManager) =>
-        Driver.execute(() => new CoreTop(), manager) {
-          (c) => new CoreTopTests(c)
+      "TestBench_Core" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new TestBench_Core(), manager) {
+          (c) => new TestBench_CoreTests(c)
         }
       },
       "Memory" -> { (manager: TesterOptionsManager) =>

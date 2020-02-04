@@ -1,7 +1,7 @@
 package datapath
 import chisel3._
 
-class Top extends Module {
+class Core extends Module {
     val io = IO(new Bundle {
         val dmem_data = Input(SInt(32.W))
         val imem_data = Input(UInt(32.W))
@@ -11,6 +11,7 @@ class Top extends Module {
         val dmem_memRd = Output(UInt(1.W))
         val dmem_memAddr = Output(UInt(10.W))
         val dmem_memData = Output(SInt(32.W))
+        val reg_7 = Output(SInt(32.W))
  })
 
     val IF_ID = Module(new IF_ID())
@@ -162,5 +163,7 @@ class Top extends Module {
 
     // Just for testing
     io.reg_out := writeback.io.write_data
+
+    io.reg_7 := decode.io.reg_7_out
 
 }

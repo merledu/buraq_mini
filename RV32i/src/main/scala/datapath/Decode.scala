@@ -47,6 +47,7 @@ class Decode extends Module {
     val ctrl_OpA_sel_out = Output(UInt(2.W))
     val ctrl_OpB_sel_out = Output(UInt(1.W))
     val ctrl_next_pc_sel_out = Output(UInt(2.W))
+    val reg_7_out = Output(SInt(32.W))
   })
 
   val hazardDetection = Module(new HazardDetection())
@@ -273,6 +274,8 @@ class Decode extends Module {
     io.ctrl_OpB_sel_out := control.io.out_operand_b_sel
     io.ctrl_next_pc_sel_out := control.io.out_next_pc_sel
   }
+
+  io.reg_7_out := reg_file.io.reg_7
 
 
 }

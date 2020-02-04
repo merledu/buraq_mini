@@ -42,7 +42,7 @@ class ForwardUnit extends Module {
     } .elsewhen(io.MEM_WB_REGWR === "b1".U && io.MEM_WB_REGRD =/= "b00000".U && ~((io.EX_MEM_REGWR === "b1".U) && (io.EX_MEM_REGRD =/= "b00000".U) && (io.EX_MEM_REGRD === io.ID_EX_REGRS2)) && (io.MEM_WB_REGRD === io.ID_EX_REGRS2)) {
         io.forward_b := "b10".U
         //io.forward_a := "b00".U
-    } .elsewhen(io.MEM_WB_REGWR === "b1".U && io.MEM_WB_REGRD =/= "b00000".U && ~((io.EX_MEM_REGWR === "b1".U) && (io.EX_MEM_REGRD =/= "b00000".U) && (io.EX_MEM_REGRD === io.ID_EX_REGRS2))  && (io.MEM_WB_REGRD === io.ID_EX_REGRS1)) {
+    } .elsewhen(io.MEM_WB_REGWR === "b1".U && io.MEM_WB_REGRD =/= "b00000".U && ~((io.EX_MEM_REGWR === "b1".U) && (io.EX_MEM_REGRD =/= "b00000".U) && (io.EX_MEM_REGRD === io.ID_EX_REGRS1))  && (io.MEM_WB_REGRD === io.ID_EX_REGRS1)) {
         io.forward_a := "b10".U
        // io.forward_b := "b00".U
     }
