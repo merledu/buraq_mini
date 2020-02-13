@@ -5,6 +5,7 @@ class Core extends Module {
     val io = IO(new Bundle {
         val dmem_data = Input(SInt(32.W))
         val imem_data = Input(UInt(32.W))
+        val stall = Input(UInt(1.W))
         val reg_out = Output(SInt(32.W))
         val imem_wrAddr = Output(UInt(10.W))
         val dmem_memWr = Output(UInt(1.W))
@@ -27,6 +28,7 @@ class Core extends Module {
 
     io.imem_wrAddr := fetch.io.wrAddr
     // *********** ----------- INSTRUCTION FETCH (IF) STAGE ----------- ********* //
+    fetch.io.stall := io.stall
     fetch.io.inst_in := io.imem_data
     fetch.io.sb_imm := decode.io.sb_imm
     fetch.io.uj_imm := decode.io.uj_imm
@@ -40,6 +42,7 @@ class Core extends Module {
     fetch.io.hazardDetection_pc_forward := decode.io.hazardDetection_pc_forward
     fetch.io.hazardDetection_inst_forward := decode.io.hazardDetection_inst_forward
 
+    IF_ID.io.stall := io.stall
     IF_ID.io.pc_in := fetch.io.pc_out
     IF_ID.io.pc4_in := fetch.io.pc4_out
     IF_ID.io.inst_in := fetch.io.inst_out
@@ -62,6 +65,7 @@ class Core extends Module {
     decode.io.EX_MEM_alu_output := EX_MEM.io.alu_output
     decode.io.dmem_memOut := io.dmem_data
 
+    ID_EX.io.stall := io.stall
     ID_EX.io.ctrl_MemWr_in := decode.io.ctrl_MemWr_out
     ID_EX.io.ctrl_MemRd_in := decode.io.ctrl_MemRd_out
     ID_EX.io.ctrl_Branch_in := decode.io.ctrl_Branch_out
@@ -111,6 +115,7 @@ class Core extends Module {
     execute.io.ID_EX_ctrl_RegWr := ID_EX.io.ctrl_RegWr_out
     execute.io.ID_EX_ctrl_MemToReg := ID_EX.io.ctrl_MemToReg_out
 
+    EX_MEM.io.stall := io.stall
     // Passing the ALU output to the EX/MEM pipeline register
     EX_MEM.io.alu_in := execute.io.alu_output
 
@@ -142,6 +147,7 @@ class Core extends Module {
     io.dmem_memAddr := memory_stage.io.memAddress
     io.dmem_memData := memory_stage.io.rs2_out
 
+    MEM_WB.io.stall := io.stall
     MEM_WB.io.alu_in := memory_stage.io.alu_output
     MEM_WB.io.dmem_data_in := io.dmem_data
     MEM_WB.io.rd_sel_in := memory_stage.io.rd_sel_out

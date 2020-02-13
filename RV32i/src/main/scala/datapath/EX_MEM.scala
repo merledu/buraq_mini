@@ -10,8 +10,9 @@ class EX_MEM extends Module {
         val rs2_in = Input(SInt(32.W))
         val rd_sel_in = Input(UInt(5.W))
         val rs2_sel_in = Input(UInt(5.W))
-
         val alu_in = Input(SInt(32.W))
+
+        val stall = Input(UInt(1.W))
 
         val ctrl_MemWr_out = Output(UInt(1.W))
         val ctrl_MemRd_out = Output(UInt(1.W))
@@ -25,36 +26,41 @@ class EX_MEM extends Module {
     })
 
         val reg_memWr = RegInit(0.U(1.W))
-        reg_memWr := io.ctrl_MemWr_in
-        io.ctrl_MemWr_out := reg_memWr
-
         val reg_memRd = RegInit(0.U(1.W))
-        reg_memRd := io.ctrl_MemRd_in
-        io.ctrl_MemRd_out := reg_memRd
-
         val reg_regWr = RegInit(0.U(1.W))
-        reg_regWr := io.ctrl_RegWr_in
-        io.ctrl_RegWr_out := reg_regWr
-
         val reg_memToReg = RegInit(0.U(1.W))
-        reg_memToReg := io.ctrl_MemToReg_in
-        io.ctrl_MemToReg_out := reg_memToReg
-
         val reg_rs2 = RegInit(0.S(32.W))
-        reg_rs2 := io.rs2_in
-        io.rs2_out := reg_rs2
-
         val reg_rd_sel = RegInit(0.U(5.W))
-        reg_rd_sel := io.rd_sel_in
-        io.rd_sel_out := reg_rd_sel
-
         val reg_rs2_sel = RegInit(0.U(5.W))
-        reg_rs2_sel := io.rs2_sel_in
-        io.rs2_sel_out := reg_rs2_sel
-
         val reg_alu_output = RegInit(0.S(32.W))
-        reg_alu_output := io.alu_in
-        io.alu_output := reg_alu_output
 
+    when(io.stall =/= 1.U) {
+        reg_memWr := io.ctrl_MemWr_in
+        reg_memRd := io.ctrl_MemRd_in
+        reg_regWr := io.ctrl_RegWr_in
+        reg_memToReg := io.ctrl_MemToReg_in
+        reg_rs2 := io.rs2_in
+        reg_rd_sel := io.rd_sel_in
+        reg_rs2_sel := io.rs2_sel_in
+        reg_alu_output := io.alu_in
+
+        io.ctrl_MemWr_out := reg_memWr
+        io.ctrl_MemRd_out := reg_memRd
+        io.ctrl_RegWr_out := reg_regWr
+        io.ctrl_MemToReg_out := reg_memToReg
+        io.rs2_out := reg_rs2
+        io.rd_sel_out := reg_rd_sel
+        io.rs2_sel_out := reg_rs2_sel
+        io.alu_output := reg_alu_output
+    } .otherwise {
+        io.ctrl_MemWr_out := reg_memWr
+        io.ctrl_MemRd_out := reg_memRd
+        io.ctrl_RegWr_out := reg_regWr
+        io.ctrl_MemToReg_out := reg_memToReg
+        io.rs2_out := reg_rs2
+        io.rd_sel_out := reg_rd_sel
+        io.rs2_sel_out := reg_rs2_sel
+        io.alu_output := reg_alu_output
+    }
 
 }

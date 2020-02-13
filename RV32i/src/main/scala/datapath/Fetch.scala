@@ -15,6 +15,7 @@ class Fetch extends Module {
     val hazardDetection_current_pc_out = Input(SInt(32.W))
     val hazardDetection_pc_forward = Input(UInt(1.W))
     val hazardDetection_inst_forward = Input(UInt(1.W))
+    val stall = Input(UInt(1.W))
     val wrAddr = Output(UInt(10.W))
     val pc_out = Output(SInt(32.W))
     val pc4_out = Output(SInt(32.W))
@@ -22,6 +23,7 @@ class Fetch extends Module {
   })
 
   val pc = Module(new Pc())
+  pc.io.stall := io.stall
   //val imem = Module(new InstructionMem())
 
   //imem.io.wrAddr := pc.io.out(11,2).asUInt

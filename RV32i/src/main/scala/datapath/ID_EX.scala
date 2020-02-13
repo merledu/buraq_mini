@@ -23,6 +23,8 @@ class ID_EX extends Module {
         val ctrl_OpB_sel_in = Input(UInt(1.W))
         val ctrl_nextPc_sel_in = Input(UInt(2.W))
 
+        val stall = Input(UInt(1.W))
+
         val pc_out = Output(SInt(32.W))
         val pc4_out = Output(SInt(32.W))
         val rs1_out = Output(SInt(32.W))
@@ -64,46 +66,69 @@ class ID_EX extends Module {
     val ctrl_OpB_sel_reg = RegInit(0.U(1.W))
     val ctrl_nextPc_sel_reg = RegInit(0.U(1.W))
 
+    when(io.stall =/= 1.U) {
+        pc_reg := io.pc_in
+        pc4_reg := io.pc4_in
+        rs1_reg := io.rs1_in
+        rs2_reg := io.rs2_in
+        imm_reg := io.imm
+        rd_sel_reg := io.rd_sel_in
+        rs1_sel_reg := io.rs1_sel_in
+        rs2_sel_reg := io.rs2_sel_in
+        func3_reg := io.func3_in
+        func7_reg := io.func7_in
+        // Storing Control state in the registers
+        ctrl_MemWr_reg := io.ctrl_MemWr_in
+        ctrl_MemRd_reg := io.ctrl_MemRd_in
+        ctrl_Branch_reg := io.ctrl_Branch_in
+        ctrl_RegWr_reg := io.ctrl_RegWr_in
+        ctrl_MemToReg_reg := io.ctrl_MemToReg_in
+        ctrl_AluOp_reg := io.ctrl_AluOp_in
+        ctrl_OpA_sel_reg := io.ctrl_OpA_sel_in
+        ctrl_OpB_sel_reg := io.ctrl_OpB_sel_in
+        ctrl_nextPc_sel_reg := io.ctrl_nextPc_sel_in
 
-    pc_reg := io.pc_in
-    pc4_reg := io.pc4_in
-    rs1_reg := io.rs1_in
-    rs2_reg := io.rs2_in
-    imm_reg := io.imm
-    rd_sel_reg := io.rd_sel_in
-    rs1_sel_reg := io.rs1_sel_in
-    rs2_sel_reg := io.rs2_sel_in
-    func3_reg := io.func3_in
-    func7_reg := io.func7_in
-    // Storing Control state in the registers
-    ctrl_MemWr_reg := io.ctrl_MemWr_in
-    ctrl_MemRd_reg := io.ctrl_MemRd_in
-    ctrl_Branch_reg := io.ctrl_Branch_in
-    ctrl_RegWr_reg := io.ctrl_RegWr_in
-    ctrl_MemToReg_reg := io.ctrl_MemToReg_in
-    ctrl_AluOp_reg := io.ctrl_AluOp_in
-    ctrl_OpA_sel_reg := io.ctrl_OpA_sel_in
-    ctrl_OpB_sel_reg := io.ctrl_OpB_sel_in
-    ctrl_nextPc_sel_reg := io.ctrl_nextPc_sel_in
+        io.pc_out := pc_reg
+        io.pc4_out := pc4_reg
+        io.rs1_out := rs1_reg
+        io.rs2_out := rs2_reg
+        io.imm_out := imm_reg
+        io.rd_sel_out := rd_sel_reg
+        io.rs1_sel_out := rs1_sel_reg
+        io.rs2_sel_out := rs2_sel_reg
+        io.func3_out := func3_reg
+        io.func7_out := func7_reg
 
-    io.pc_out := pc_reg
-    io.pc4_out := pc4_reg
-    io.rs1_out := rs1_reg
-    io.rs2_out := rs2_reg
-    io.imm_out := imm_reg
-    io.rd_sel_out := rd_sel_reg
-    io.rs1_sel_out := rs1_sel_reg
-    io.rs2_sel_out := rs2_sel_reg
-    io.func3_out := func3_reg
-    io.func7_out := func7_reg
+        io.ctrl_MemWr_out := ctrl_MemWr_reg
+        io.ctrl_MemRd_out := ctrl_MemRd_reg
+        io.ctrl_Branch_out := ctrl_Branch_reg
+        io.ctrl_RegWr_out := ctrl_RegWr_reg
+        io.ctrl_MemToReg_out := ctrl_MemToReg_reg
+        io.ctrl_AluOp_out := ctrl_AluOp_reg
+        io.ctrl_OpA_sel_out := ctrl_OpA_sel_reg
+        io.ctrl_OpB_sel_out := ctrl_OpB_sel_reg
+        io.ctrl_nextPc_sel_out := ctrl_nextPc_sel_reg
+    } .otherwise {
+        io.pc_out := pc_reg
+        io.pc4_out := pc4_reg
+        io.rs1_out := rs1_reg
+        io.rs2_out := rs2_reg
+        io.imm_out := imm_reg
+        io.rd_sel_out := rd_sel_reg
+        io.rs1_sel_out := rs1_sel_reg
+        io.rs2_sel_out := rs2_sel_reg
+        io.func3_out := func3_reg
+        io.func7_out := func7_reg
 
-    io.ctrl_MemWr_out := ctrl_MemWr_reg
-    io.ctrl_MemRd_out := ctrl_MemRd_reg
-    io.ctrl_Branch_out := ctrl_Branch_reg
-    io.ctrl_RegWr_out := ctrl_RegWr_reg
-    io.ctrl_MemToReg_out := ctrl_MemToReg_reg
-    io.ctrl_AluOp_out := ctrl_AluOp_reg
-    io.ctrl_OpA_sel_out := ctrl_OpA_sel_reg
-    io.ctrl_OpB_sel_out := ctrl_OpB_sel_reg
-    io.ctrl_nextPc_sel_out := ctrl_nextPc_sel_reg
+        io.ctrl_MemWr_out := ctrl_MemWr_reg
+        io.ctrl_MemRd_out := ctrl_MemRd_reg
+        io.ctrl_Branch_out := ctrl_Branch_reg
+        io.ctrl_RegWr_out := ctrl_RegWr_reg
+        io.ctrl_MemToReg_out := ctrl_MemToReg_reg
+        io.ctrl_AluOp_out := ctrl_AluOp_reg
+        io.ctrl_OpA_sel_out := ctrl_OpA_sel_reg
+        io.ctrl_OpB_sel_out := ctrl_OpB_sel_reg
+        io.ctrl_nextPc_sel_out := ctrl_nextPc_sel_reg
+    }
+
 }
