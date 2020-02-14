@@ -5,7 +5,6 @@ class Core extends Module {
     val io = IO(new Bundle {
         val dmem_data = Input(SInt(32.W))
         val imem_data = Input(UInt(32.W))
-        val stall = Input(UInt(1.W))
         val reg_out = Output(SInt(32.W))
         val imem_wrAddr = Output(UInt(10.W))
         val dmem_memWr = Output(UInt(1.W))
@@ -14,7 +13,9 @@ class Core extends Module {
         val dmem_memData = Output(SInt(32.W))
         val reg_7 = Output(SInt(32.W))
  })
-
+    val staller = Module(new Staller)
+    val stallDetection = Module(new StallDetection)
+    val busController = Module(new BusController)
     val IF_ID = Module(new IF_ID())
     val ID_EX = Module(new ID_EX())
     val EX_MEM = Module(new EX_MEM())
@@ -24,11 +25,16 @@ class Core extends Module {
     val execute = Module(new Execute())
     val memory_stage = Module(new MemoryStage())
     val writeback = Module(new WriteBack())
+    val memReadReg = RegInit(0.U(32.W))
+    val memWriteReg = RegInit(0.U(32.W))
 
+
+    busController.io.isStalled := staller.io.stall
+    staller.io.ack := busController.io.done
 
     io.imem_wrAddr := fetch.io.wrAddr
     // *********** ----------- INSTRUCTION FETCH (IF) STAGE ----------- ********* //
-    fetch.io.stall := io.stall
+    fetch.io.stall := staller.io.stall
     fetch.io.inst_in := io.imem_data
     fetch.io.sb_imm := decode.io.sb_imm
     fetch.io.uj_imm := decode.io.uj_imm
@@ -42,7 +48,7 @@ class Core extends Module {
     fetch.io.hazardDetection_pc_forward := decode.io.hazardDetection_pc_forward
     fetch.io.hazardDetection_inst_forward := decode.io.hazardDetection_inst_forward
 
-    IF_ID.io.stall := io.stall
+    IF_ID.io.stall := staller.io.stall
     IF_ID.io.pc_in := fetch.io.pc_out
     IF_ID.io.pc4_in := fetch.io.pc4_out
     IF_ID.io.inst_in := fetch.io.inst_out
@@ -64,8 +70,9 @@ class Core extends Module {
     decode.io.alu_output := execute.io.alu_output
     decode.io.EX_MEM_alu_output := EX_MEM.io.alu_output
     decode.io.dmem_memOut := io.dmem_data
+    decode.io.stall := staller.io.stall
 
-    ID_EX.io.stall := io.stall
+    ID_EX.io.stall := staller.io.stall
     ID_EX.io.ctrl_MemWr_in := decode.io.ctrl_MemWr_out
     ID_EX.io.ctrl_MemRd_in := decode.io.ctrl_MemRd_out
     ID_EX.io.ctrl_Branch_in := decode.io.ctrl_Branch_out
@@ -115,7 +122,7 @@ class Core extends Module {
     execute.io.ID_EX_ctrl_RegWr := ID_EX.io.ctrl_RegWr_out
     execute.io.ID_EX_ctrl_MemToReg := ID_EX.io.ctrl_MemToReg_out
 
-    EX_MEM.io.stall := io.stall
+    EX_MEM.io.stall := staller.io.stall
     // Passing the ALU output to the EX/MEM pipeline register
     EX_MEM.io.alu_in := execute.io.alu_output
 
@@ -124,8 +131,12 @@ class Core extends Module {
     EX_MEM.io.rs2_sel_in := execute.io.rs2_sel_out
     EX_MEM.io.rs2_in := execute.io.rs2_out
 
-    // Passing the control signals to EX/MEM pipeline register
+    // Passing the control signals to EX/MEM pipeline register and (memRead / memWrite control registers for stall detection unit)
     EX_MEM.io.ctrl_MemWr_in := execute.io.ctrl_MemWr_out
+    when(staller.io.stall =/= 1.U) {
+       memWriteReg := execute.io.ctrl_MemWr_out
+       memReadReg := execute.io.ctrl_MemRd_out
+    }
     EX_MEM.io.ctrl_MemRd_in := execute.io.ctrl_MemRd_out
     EX_MEM.io.ctrl_RegWr_in := execute.io.ctrl_RegWr_out
     EX_MEM.io.ctrl_MemToReg_in := execute.io.ctrl_MemToReg_out
@@ -147,7 +158,7 @@ class Core extends Module {
     io.dmem_memAddr := memory_stage.io.memAddress
     io.dmem_memData := memory_stage.io.rs2_out
 
-    MEM_WB.io.stall := io.stall
+    MEM_WB.io.stall := staller.io.stall
     MEM_WB.io.alu_in := memory_stage.io.alu_output
     MEM_WB.io.dmem_data_in := io.dmem_data
     MEM_WB.io.rd_sel_in := memory_stage.io.rd_sel_out
@@ -155,6 +166,22 @@ class Core extends Module {
     MEM_WB.io.ctrl_RegWr_in := memory_stage.io.ctrl_RegWr_out
     MEM_WB.io.ctrl_MemRd_in := memory_stage.io.ctrl_MemRd_out
     MEM_WB.io.ctrl_MemToReg_in := memory_stage.io.ctrl_MemToReg_out
+
+    stallDetection.io.memWrite := memWriteReg
+    stallDetection.io.memRead := memReadReg
+
+    staller.io.isStall := stallDetection.io.isStall
+
+//    when(EX_MEM.io.ctrl_MemRd_out === 1.U) {
+//       staller.io.isLoad := true.B
+//       staller.io.isStore := false.B
+//    } .elsewhen(EX_MEM.io.ctrl_MemWr_out === 1.U) {
+//       staller.io.isLoad := false.B
+//       staller.io.isStore := true.B
+//    } .otherwise {
+//       staller.io.isLoad := false.B
+//       staller.io.isStore := false.B
+//    }
 
 
 

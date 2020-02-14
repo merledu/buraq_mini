@@ -3,7 +3,6 @@ import chisel3._
 
 class TestBench_Core extends Module {
   val io = IO(new Bundle {
-    val stall = Input(UInt(1.W))
     val imem_out = Output(UInt(32.W))
     val reg_7_output = Output(SInt(32.W))
   })
@@ -11,7 +10,6 @@ class TestBench_Core extends Module {
   val core = Module(new Core)
   val mem = Module(new Memory)
 
-  core.io.stall := io.stall
 
   mem.io.imem_wrAddr := core.io.imem_wrAddr
   core.io.imem_data := mem.io.imem_out

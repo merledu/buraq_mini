@@ -24,7 +24,6 @@ class EX_MEM extends Module {
         val alu_output = Output(SInt(32.W))
 
     })
-
         val reg_memWr = RegInit(0.U(1.W))
         val reg_memRd = RegInit(0.U(1.W))
         val reg_regWr = RegInit(0.U(1.W))

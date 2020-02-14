@@ -155,6 +155,21 @@ object Launcher {
         Driver.execute(() => new Memory(), manager) {
           (c) => new MemoryTests(c)
         }
+      },
+      "BusController" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new BusController(), manager) {
+          (c) => new BusControllerTests(c)
+        }
+      },
+      "Staller" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new Staller(), manager) {
+          (c) => new StallerTests(c)
+        }
+      },
+      "StallDetection" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new StallDetection(), manager) {
+          (c) => new StallDetectionTests(c)
+        }
       }
   )
   def main(args: Array[String]): Unit = {

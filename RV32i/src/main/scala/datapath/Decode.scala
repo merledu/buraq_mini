@@ -18,6 +18,8 @@ class Decode extends Module {
     val dmem_memOut = Input(SInt(32.W))
     val writeback_write_data = Input(SInt(32.W))
 
+    val stall = Input(UInt(1.W))
+
     val pc_out = Output(SInt(32.W))
     val pc4_out = Output(SInt(32.W))
     val inst_out = Output(UInt(32.W))
@@ -196,6 +198,7 @@ class Decode extends Module {
   reg_file.io.rs1_sel := io.IF_ID_inst(19, 15)
   reg_file.io.rs2_sel := io.IF_ID_inst(24, 20)
   reg_file.io.regWrite := io.MEM_WB_ctrl_regWr
+  reg_file.io.stall := io.stall
   reg_file.io.rd_sel := io.MEM_WB_rd_sel
   reg_file.io.writeData := io.writeback_write_data
   
