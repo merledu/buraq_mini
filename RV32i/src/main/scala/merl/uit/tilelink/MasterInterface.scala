@@ -2,31 +2,33 @@ package merl.uit.tilelink
 import chisel3._
 import chisel3.util._
 
-class MasterInterface(sourceId: UInt, forFetch: Boolean) extends Module with ChannelA {
-  val io = IO(new Bundle {
-    // State control inputs from the core
-    val memRd = Input(UInt(1.W))
-    val memWrt = Input(UInt(1.W))
-    val uartEn = Input(UInt(1.W))
-    // Inputs from the calling Module
-    val addr_in = Input(UInt(32.W))
-    val data_in = Input(UInt(32.W))
-    // Channel D inputs from Slave interface
-    val d_opcode = Input(UInt(3.W))
-    val d_source = Input(UInt(32.W))
-    val d_denied = Input(Bool())
-    val d_valid = Input(Bool())
-    val d_data = Input(UInt(32.W))
-    // Channel A outputs to Slave interface
-    val a_address = Output(UInt(32.W))
-    val a_data = Output(UInt(32.W))
-    val a_opcode = Output(UInt(3.W))
-    val a_source = Output(UInt(32.W))
-    val a_valid = Output(Bool())
-    // Data output from Master interface to be used by the calling module.
-    val data = Output(UInt(32.W))
+class MasterInterfaceIO extends Bundle {
+  // State control inputs from the core
+  val memRd = Input(UInt(1.W))
+  val memWrt = Input(UInt(1.W))
+  val uartEn = Input(UInt(1.W))
+  // Inputs from the calling Module
+  val addr_in = Input(UInt(32.W))
+  val data_in = Input(UInt(32.W))
+  // Channel D inputs from Slave interface
+  val d_opcode = Input(UInt(3.W))
+  val d_source = Input(UInt(32.W))
+  val d_denied = Input(Bool())
+  val d_valid = Input(Bool())
+  val d_data = Input(UInt(32.W))
+  // Channel A outputs to Slave interface
+  val a_address = Output(UInt(32.W))
+  val a_data = Output(UInt(32.W))
+  val a_opcode = Output(UInt(3.W))
+  val a_source = Output(UInt(32.W))
+  val a_valid = Output(Bool())
+  // Data output from Master interface to be used by the calling module.
+  val data = Output(UInt(32.W))
+}
 
-  })
+class MasterInterface(sourceId: UInt, forFetch: Boolean) extends Module with ChannelA {
+  val io = IO(new MasterInterfaceIO)
+
   var a_opcode = 0.U
   var a_source = sourceId
   var a_address = 0.U

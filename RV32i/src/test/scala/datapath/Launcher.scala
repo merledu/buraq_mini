@@ -182,6 +182,11 @@ object Launcher {
         Driver.execute(() => new SlaveInterface(), manager) {
           (c) => new SlaveInterfaceTests(c)
         }
+      },
+      "ICCMController" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new ICCMController(), manager) {
+          (c) => new ICCMControllerTests(c)
+        }
       }
   )
   def main(args: Array[String]): Unit = {
