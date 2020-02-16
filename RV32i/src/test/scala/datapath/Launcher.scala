@@ -2,7 +2,9 @@
 package datapath
 
 import chisel3.iotesters.{Driver, TesterOptionsManager}
+import merl.uit.tilelink.{MasterInterface, SlaveInterface}
 import utils.TutorialRunner
+import chisel3._
 
 object Launcher {
   val examples = Map(
@@ -169,6 +171,16 @@ object Launcher {
       "StallDetection" -> { (manager: TesterOptionsManager) =>
         Driver.execute(() => new StallDetection(), manager) {
           (c) => new StallDetectionTests(c)
+        }
+      },
+      "MasterInterface" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new MasterInterface(1.U, false), manager) {
+          (c) => new MasterInterfaceTests(c)
+        }
+      },
+      "SlaveInterface" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new SlaveInterface(), manager) {
+          (c) => new SlaveInterfaceTests(c)
         }
       }
   )
