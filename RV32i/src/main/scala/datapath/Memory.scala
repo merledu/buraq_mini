@@ -13,16 +13,16 @@ class Memory extends Module {
     val dmem_out = Output(SInt(32.W))
   })
 
-  val imem = Module(new InstructionMem)
-  val dmem = Module(new DataMem)
-
-  imem.io.wrAddr := io.imem_wrAddr
-  io.imem_out := imem.io.readData
-
-  dmem.io.memAddress := io.dmem_memAddr
-  dmem.io.memRead := io.dmem_memRd
-  dmem.io.memWrite := io.dmem_memWr
-  dmem.io.memData := io.dmem_memData
-  io.dmem_out := dmem.io.memOut
+//  val imem = Module(new InstructionMem)
+//  val dmem = Module(new DataMem)
+//
+//  imem.io.wrAddr := io.imem_wrAddr
+//  io.imem_out := imem.io.readData
+//
+//  dmem.io.memAddress := io.dmem_memAddr
+//  dmem.io.memRead := io.dmem_memRd
+//  dmem.io.memWrite := io.dmem_memWr
+//  dmem.io.memData := io.dmem_memData
+//  io.dmem_out := dmem.io.memOut
 
 }

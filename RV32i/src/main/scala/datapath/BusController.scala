@@ -2,6 +2,7 @@ package datapath
 import chisel3._
 import chisel3.util._
 import merl.uit.tilelink.MasterInterface
+
 class BusController extends Module {
   val io = IO(new Bundle {
     // The staller's isStalled output which tells that the core is stalled.
@@ -32,38 +33,78 @@ class BusController extends Module {
     val data_out = Output(UInt(32.W))
   })
   val m3 = Module(new MasterInterface(sourceId = 3.U, forFetch = true))
-  initializeMasterInterface(m3)
+  m3.io.addr_in := io.pcAddr
+  m3.io.data_in := io.data_in
+  m3.io.memRd := io.memRd
+  m3.io.memWrt := io.memWrt
+//  m3.io.uartEn := io.uartEn
+  m3.io.d_opcode := io.d_opcode
+  m3.io.d_data := io.d_data
+  m3.io.d_source := io.d_source
+  m3.io.d_denied := io.d_denied
+  m3.io.d_valid := io.d_valid
+  io.a_address := m3.io.a_address
+  io.a_data := m3.io.a_data
+  io.a_opcode := m3.io.a_opcode
+  io.a_source := m3.io.a_source
+  io.a_valid := m3.io.a_valid
 
-  val idle :: stall :: Nil = Enum(2)
-  val stateReg = RegInit(idle)
+  //val idle :: stall :: fetch :: Nil = Enum(3)
+  //val stateReg = RegInit(idle)
 
   val counter = RegInit(0.U(5.W))
+
+  //switch(stateReg) {
+   // is(idle) {
+//      when(io.isStalled) {
+//      //  stateReg := stall
+//      } .otherwise {
+//        stateReg := fetch
+//      }
+//    }
+    //is(stall) {
+//      counter := counter + 1.U
+//      when(counter === 31.U) {
+//        counter := 0.U
+//        io.done := 1.U
+//        io.data_out := m3.io.data
+//      //  stateReg := idle
+//      } .otherwise {
+//        io.done := 0.U
+//        io.data_out := 0.U
+//      }
   io.done := 0.U
   io.data_out := 0.U
-  switch(stateReg) {
-    is(idle) {
-      when(io.isStalled) {
-        stateReg := stall
-      }
-    }
-    is(stall) {
-      counter := counter + 1.U
-      when(counter === 31.U) {
-        counter := 0.U
-        io.done := 1.U
-        io.data_out := m3.io.data
-        stateReg := idle
-      }
 
+  when(io.isStalled) {
+    counter := counter + 1.U
+    when(counter === 31.U) {
+      counter := 0.U
+      io.done := 1.U
+      io.data_out := m3.io.data
+    }.otherwise {
+      io.done := 0.U
+      io.data_out := 0.U
     }
+  } .otherwise {
+    //io.done := 1.U
+    io.data_out := m3.io.data
   }
+
+    //}
+
+    //is(fetch) {
+      //io.data_out := m3.io.data
+      //stateReg := idle
+    //}
+  //}
 
   def initializeMasterInterface(mi: MasterInterface) = {
     mi.io.addr_in := io.pcAddr
     mi.io.data_in := io.data_in
     mi.io.memRd := io.memRd
     mi.io.memWrt := io.memWrt
-    mi.io.uartEn := io.uartEn
+   // mi.io.uartEn := io.uartEn
     mi.io.d_opcode := io.d_opcode
     mi.io.d_data := io.d_data
     mi.io.d_source := io.d_source

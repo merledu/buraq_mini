@@ -10,8 +10,9 @@ class InstructionMem extends Module {
     })
 
     val mem = Mem(1024, UInt(32.W))
-    loadMemoryFromFile(mem, "/Users/mbp/Desktop/mem1.txt")
-    io.readData := mem(io.wrAddr)
+//    loadMemoryFromFile(mem, "/Users/mbp/Desktop/mem1.txt")
+  loadMemoryFromFile(mem, "/home/hadirkhan/Desktop/mem1.txt")
+  io.readData := mem(io.wrAddr)
 
     //io.readData := "h00200093".U
 

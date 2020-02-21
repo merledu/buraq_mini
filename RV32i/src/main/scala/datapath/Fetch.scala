@@ -39,33 +39,41 @@ class Fetch extends Module {
     io.inst_out := io.inst_in
   }
 
+  // Have to figure out how to stop pc from updating here.
+  // The when below is one way to stop pc from updating but it is causing issues with JALR
+  // This functionality will be required when stalling the pipeline if there is no instruction found in the memory
+  // So that we can use UART protocol
+//  when(io.inst_in =/= 0.U) {
 
-  when(io.hazardDetection_pc_forward === 1.U) {
-    pc.io.in := io.hazardDetection_pc_out
-  } .otherwise {
-    when(io.ctrl_next_pc_sel === "b01".U) {
-      when(io.branchLogic_output === 1.U && io.ctrl_out_branch === 1.U) {
-        pc.io.in := io.sb_imm
-        io.pc_out := 0.S
-        io.pc4_out := 0.S
-        io.inst_out := 0.U
-      } .otherwise {
-        pc.io.in := pc.io.pc4
-      }
-    } .elsewhen(io.ctrl_next_pc_sel === "b10".U) {
+    when(io.hazardDetection_pc_forward === 1.U) {
+      pc.io.in := io.hazardDetection_pc_out
+    }.otherwise {
+      when(io.ctrl_next_pc_sel === "b01".U) {
+        when(io.branchLogic_output === 1.U && io.ctrl_out_branch === 1.U) {
+          pc.io.in := io.sb_imm
+          io.pc_out := 0.S
+          io.pc4_out := 0.S
+          io.inst_out := 0.U
+        }.otherwise {
+          pc.io.in := pc.io.pc4
+        }
+      }.elsewhen(io.ctrl_next_pc_sel === "b10".U) {
         pc.io.in := io.uj_imm
         io.pc_out := 0.S
         io.pc4_out := 0.S
         io.inst_out := 0.U
-    } .elsewhen(io.ctrl_next_pc_sel === "b11".U) {
+      }.elsewhen(io.ctrl_next_pc_sel === "b11".U) {
         pc.io.in := io.jalr_imm
         io.pc_out := 0.S
         io.pc4_out := 0.S
         io.inst_out := 0.U
-    } .otherwise {
-      pc.io.in := pc.io.pc4
+      }.otherwise {
+        pc.io.in := pc.io.pc4
+      }
     }
-  }
+//  } .otherwise {
+//    pc.io.in := pc.io.out
+//  }
 
 
 

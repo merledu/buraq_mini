@@ -3,19 +3,46 @@ import chisel3._
 
 class Core extends Module {
     val io = IO(new Bundle {
-        val dmem_data = Input(SInt(32.W))
-        val imem_data = Input(UInt(32.W))
+        //val dmem_data = Input(SInt(32.W))
+        //val imem_data = Input(UInt(32.W))
+        // Channel D wires coming from the ICCM Controller's slave interface outside the core.
+        val iccm_d_opcode = Input(UInt(3.W))
+        val iccm_d_source = Input(UInt(32.W))
+        val iccm_d_denied = Input(Bool())
+        val iccm_d_valid = Input(Bool())
+        val iccm_d_data = Input(UInt(32.W))
+        // Channel D wires coming from the DCCM Controller's slave interface outside the core.
+        val dccm_d_opcode = Input(UInt(3.W))
+        val dccm_d_source = Input(UInt(32.W))
+        val dccm_d_denied = Input(Bool())
+        val dccm_d_valid = Input(Bool())
+        val dccm_d_data = Input(UInt(32.W))
         val reg_out = Output(SInt(32.W))
-        val imem_wrAddr = Output(UInt(10.W))
-        val dmem_memWr = Output(UInt(1.W))
-        val dmem_memRd = Output(UInt(1.W))
-        val dmem_memAddr = Output(UInt(10.W))
-        val dmem_memData = Output(SInt(32.W))
+        //val imem_wrAddr = Output(UInt(10.W))
+        //val dmem_memWr = Output(UInt(1.W))
+        //val dmem_memRd = Output(UInt(1.W))
+        //val dmem_memAddr = Output(UInt(10.W))
+        //val dmem_memData = Output(SInt(32.W))
+
+        // Channel A outputs from the core to the ICCM controller's slave interface
+        val iccm_a_address = Output(UInt(32.W))
+        val iccm_a_data = Output(UInt(32.W))
+        val iccm_a_opcode = Output(UInt(3.W))
+        val iccm_a_source = Output(UInt(32.W))
+        val iccm_a_valid = Output(Bool())
+        // Channel A outputs from the core to the DCCM controller's slave interface
+        val dccm_a_address = Output(UInt(32.W))
+        val dccm_a_data = Output(UInt(32.W))
+        val dccm_a_opcode = Output(UInt(3.W))
+        val dccm_a_source = Output(UInt(32.W))
+        val dccm_a_valid = Output(Bool())
         val reg_7 = Output(SInt(32.W))
  })
     val staller = Module(new Staller)
-    val stallDetection = Module(new StallDetection)
-    val busController = Module(new BusController)
+    val fetchBusController = Module(new FetchBusController)
+    val loadStoreBusController = Module(new LoadStoreBusController)
+    //val stallDetection = Module(new StallDetection)
+    //val busController = Module(new BusController)
     val IF_ID = Module(new IF_ID())
     val ID_EX = Module(new ID_EX())
     val EX_MEM = Module(new EX_MEM())
@@ -27,15 +54,66 @@ class Core extends Module {
     val writeback = Module(new WriteBack())
     val memReadReg = RegInit(0.U(32.W))
     val memWriteReg = RegInit(0.U(32.W))
+    val stallReg = RegInit(0.U(1.W))
+
+   stallReg := staller.io.stall
+
+   fetchBusController.io.pcAddr := fetch.io.wrAddr.asUInt
+   io.iccm_a_valid := fetchBusController.io.a_valid
+   io.iccm_a_source := fetchBusController.io.a_source
+   io.iccm_a_opcode := fetchBusController.io.a_opcode
+   io.iccm_a_data := fetchBusController.io.a_data
+   io.iccm_a_address := fetchBusController.io.a_address
+   staller.io.isStall := fetchBusController.io.stall
+
+   fetchBusController.io.d_valid := io.iccm_d_valid
+   fetchBusController.io.d_source := io.iccm_d_source
+   fetchBusController.io.d_opcode := io.iccm_d_opcode
+   fetchBusController.io.d_denied := io.iccm_d_denied
+   fetchBusController.io.d_data := io.iccm_d_data
+
+   loadStoreBusController.io.isLoad := memReadReg
+   loadStoreBusController.io.isStore := memWriteReg
+
+   loadStoreBusController.io.d_valid := io.dccm_d_valid
+   loadStoreBusController.io.d_source := io.dccm_d_source
+   loadStoreBusController.io.d_opcode := io.dccm_d_opcode
+   loadStoreBusController.io.d_denied := io.dccm_d_denied
+   loadStoreBusController.io.d_data := io.dccm_d_data
+
+   io.dccm_a_address := loadStoreBusController.io.a_address
+   io.dccm_a_data := loadStoreBusController.io.a_data
+   io.dccm_a_opcode := loadStoreBusController.io.a_opcode
+   io.dccm_a_source := loadStoreBusController.io.a_source
+   io.dccm_a_valid := loadStoreBusController.io.a_valid
 
 
-    busController.io.isStalled := staller.io.stall
-    staller.io.ack := busController.io.done
+//    busController.io.isStalled := staller.io.stall
+//    busController.io.pcAddr := fetch.io.wrAddr.asUInt
+//    busController.io.data_in := memory_stage.io.rs2_out.asUInt
+//    busController.io.memRd := memReadReg
+//    busController.io.memWrt := memWriteReg
+//    busController.io.uartEn := 0.U
+//    busController.io.d_opcode := io.d_opcode
+//    busController.io.d_source := io.d_source
+//    busController.io.d_denied := io.d_denied
+//    busController.io.d_valid := io.d_valid
+//    busController.io.d_data := io.d_data
+//    io.a_opcode := busController.io.a_opcode
+//    io.a_valid := busController.io.a_valid
+//    io.a_source := busController.io.a_source
+//    io.a_data := busController.io.a_data
+//    io.a_address := busController.io.a_address
 
-    io.imem_wrAddr := fetch.io.wrAddr
+    //staller.io.ack := busController.io.done
+
+    //io.imem_wrAddr := fetch.io.wrAddr
+     // io.imem_wrAddr := 0.U
     // *********** ----------- INSTRUCTION FETCH (IF) STAGE ----------- ********* //
-    fetch.io.stall := staller.io.stall
-    fetch.io.inst_in := io.imem_data
+    fetch.io.stall := 0.U
+    //fetch.io.inst_in := io.imem_data
+    //fetch.io.inst_in := busController.io.data_out
+    fetch.io.inst_in := fetchBusController.io.inst
     fetch.io.sb_imm := decode.io.sb_imm
     fetch.io.uj_imm := decode.io.uj_imm
     fetch.io.jalr_imm := decode.io.jalr_output
@@ -48,7 +126,7 @@ class Core extends Module {
     fetch.io.hazardDetection_pc_forward := decode.io.hazardDetection_pc_forward
     fetch.io.hazardDetection_inst_forward := decode.io.hazardDetection_inst_forward
 
-    IF_ID.io.stall := staller.io.stall
+    IF_ID.io.stall := 0.U
     IF_ID.io.pc_in := fetch.io.pc_out
     IF_ID.io.pc4_in := fetch.io.pc4_out
     IF_ID.io.inst_in := fetch.io.inst_out
@@ -69,10 +147,11 @@ class Core extends Module {
     decode.io.writeback_write_data := writeback.io.write_data
     decode.io.alu_output := execute.io.alu_output
     decode.io.EX_MEM_alu_output := EX_MEM.io.alu_output
-    decode.io.dmem_memOut := io.dmem_data
-    decode.io.stall := staller.io.stall
+//    decode.io.dmem_memOut := io.dmem_data
+    decode.io.dmem_memOut := loadStoreBusController.io.data.asSInt
+    decode.io.stall := 0.U
 
-    ID_EX.io.stall := staller.io.stall
+    ID_EX.io.stall := 0.U
     ID_EX.io.ctrl_MemWr_in := decode.io.ctrl_MemWr_out
     ID_EX.io.ctrl_MemRd_in := decode.io.ctrl_MemRd_out
     ID_EX.io.ctrl_Branch_in := decode.io.ctrl_Branch_out
@@ -122,7 +201,7 @@ class Core extends Module {
     execute.io.ID_EX_ctrl_RegWr := ID_EX.io.ctrl_RegWr_out
     execute.io.ID_EX_ctrl_MemToReg := ID_EX.io.ctrl_MemToReg_out
 
-    EX_MEM.io.stall := staller.io.stall
+    EX_MEM.io.stall := 0.U
     // Passing the ALU output to the EX/MEM pipeline register
     EX_MEM.io.alu_in := execute.io.alu_output
 
@@ -131,12 +210,13 @@ class Core extends Module {
     EX_MEM.io.rs2_sel_in := execute.io.rs2_sel_out
     EX_MEM.io.rs2_in := execute.io.rs2_out
 
+    when(stallReg =/= 1.U) {
+      memWriteReg := execute.io.ctrl_MemWr_out
+      memReadReg := execute.io.ctrl_MemRd_out
+    }
+
     // Passing the control signals to EX/MEM pipeline register and (memRead / memWrite control registers for stall detection unit)
     EX_MEM.io.ctrl_MemWr_in := execute.io.ctrl_MemWr_out
-    when(staller.io.stall =/= 1.U) {
-       memWriteReg := execute.io.ctrl_MemWr_out
-       memReadReg := execute.io.ctrl_MemRd_out
-    }
     EX_MEM.io.ctrl_MemRd_in := execute.io.ctrl_MemRd_out
     EX_MEM.io.ctrl_RegWr_in := execute.io.ctrl_RegWr_out
     EX_MEM.io.ctrl_MemToReg_in := execute.io.ctrl_MemToReg_out
@@ -153,36 +233,25 @@ class Core extends Module {
     memory_stage.io.EX_MEM_MemWr := EX_MEM.io.ctrl_MemWr_out
     memory_stage.io.EX_MEM_rs2 := EX_MEM.io.rs2_out
 
-    io.dmem_memWr := memory_stage.io.ctrl_MemWr_out
-    io.dmem_memRd := memory_stage.io.ctrl_MemRd_out
-    io.dmem_memAddr := memory_stage.io.memAddress
-    io.dmem_memData := memory_stage.io.rs2_out
+    //io.dmem_memWr := memory_stage.io.ctrl_MemWr_out
+    //io.dmem_memRd := memory_stage.io.ctrl_MemRd_out
+    //io.dmem_memAddr := memory_stage.io.memAddress
+    //io.dmem_memData := memory_stage.io.rs2_out
 
-    MEM_WB.io.stall := staller.io.stall
+
+
+    loadStoreBusController.io.rs2 := memory_stage.io.rs2_out.asUInt
+    loadStoreBusController.io.addr := memory_stage.io.memAddress
+
+    MEM_WB.io.stall := 0.U
     MEM_WB.io.alu_in := memory_stage.io.alu_output
-    MEM_WB.io.dmem_data_in := io.dmem_data
+    //MEM_WB.io.dmem_data_in := io.dmem_data
+    MEM_WB.io.dmem_data_in := loadStoreBusController.io.data.asSInt
     MEM_WB.io.rd_sel_in := memory_stage.io.rd_sel_out
 
     MEM_WB.io.ctrl_RegWr_in := memory_stage.io.ctrl_RegWr_out
     MEM_WB.io.ctrl_MemRd_in := memory_stage.io.ctrl_MemRd_out
     MEM_WB.io.ctrl_MemToReg_in := memory_stage.io.ctrl_MemToReg_out
-
-    stallDetection.io.memWrite := memWriteReg
-    stallDetection.io.memRead := memReadReg
-
-    staller.io.isStall := stallDetection.io.isStall
-
-//    when(EX_MEM.io.ctrl_MemRd_out === 1.U) {
-//       staller.io.isLoad := true.B
-//       staller.io.isStore := false.B
-//    } .elsewhen(EX_MEM.io.ctrl_MemWr_out === 1.U) {
-//       staller.io.isLoad := false.B
-//       staller.io.isStore := true.B
-//    } .otherwise {
-//       staller.io.isLoad := false.B
-//       staller.io.isStore := false.B
-//    }
-
 
 
 

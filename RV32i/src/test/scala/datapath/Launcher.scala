@@ -179,13 +179,28 @@ object Launcher {
         }
       },
       "SlaveInterface" -> { (manager: TesterOptionsManager) =>
-        Driver.execute(() => new SlaveInterface(), manager) {
+        Driver.execute(() => new SlaveInterface(forFetch = true), manager) {
           (c) => new SlaveInterfaceTests(c)
         }
       },
       "ICCMController" -> { (manager: TesterOptionsManager) =>
         Driver.execute(() => new ICCMController(), manager) {
           (c) => new ICCMControllerTests(c)
+        }
+      },
+      "FetchBusController" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new FetchBusController(), manager) {
+          (c) => new FetchBusControllerTests(c)
+        }
+      },
+      "Interconnect" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new Interconnect(), manager) {
+          (c) => new InterconnectTests(c)
+        }
+      },
+      "DCCMController" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new DCCMController(), manager) {
+          (c) => new DCCMControllerTests(c)
         }
       }
   )
