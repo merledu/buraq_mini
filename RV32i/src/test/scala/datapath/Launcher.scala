@@ -202,6 +202,11 @@ object Launcher {
         Driver.execute(() => new DCCMController(), manager) {
           (c) => new DCCMControllerTests(c)
         }
+      },
+      "GPIOController" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new GPIOController(), manager) {
+          (c) => new GPIOControllerTests(c)
+        }
       }
   )
   def main(args: Array[String]): Unit = {

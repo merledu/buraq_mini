@@ -64,7 +64,7 @@ class Core extends Module {
    io.iccm_a_opcode := fetchBusController.io.a_opcode
    io.iccm_a_data := fetchBusController.io.a_data
    io.iccm_a_address := fetchBusController.io.a_address
-   staller.io.isStall := fetchBusController.io.stall
+   staller.io.isUART := fetchBusController.io.stall
 
    fetchBusController.io.d_valid := io.iccm_d_valid
    fetchBusController.io.d_source := io.iccm_d_source
