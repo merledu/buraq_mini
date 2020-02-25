@@ -39,12 +39,13 @@ class Fetch extends Module {
     io.inst_out := io.inst_in
   }
 
-  // Have to figure out how to stop pc from updating here.
-  // The when below is one way to stop pc from updating but it is causing issues with JALR
-  // This functionality will be required when stalling the pipeline if there is no instruction found in the memory
-  // So that we can use UART protocol
-//  when(io.inst_in =/= 0.U) {
-
+  // Stopping the pc from updating since the pipeline has to be stalled. When the instruction is 0 and the next pc select
+  // is also 0 we have a condition where the PC needs to be stopped for UART. Used next pc select because there is
+  // a condition where the instruction is 0 but next pc select has some value for JALR instruction so the pc will not
+  // get updated.
+  when(io.inst_in === 0.U && io.ctrl_next_pc_sel === 0.U) {
+    pc.io.in := pc.io.out
+  } .otherwise {
     when(io.hazardDetection_pc_forward === 1.U) {
       pc.io.in := io.hazardDetection_pc_out
     }.otherwise {
@@ -71,9 +72,7 @@ class Fetch extends Module {
         pc.io.in := pc.io.pc4
       }
     }
-//  } .otherwise {
-//    pc.io.in := pc.io.out
-//  }
+  }
 
 
 

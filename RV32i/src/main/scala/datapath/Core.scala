@@ -110,7 +110,7 @@ class Core extends Module {
     //io.imem_wrAddr := fetch.io.wrAddr
      // io.imem_wrAddr := 0.U
     // *********** ----------- INSTRUCTION FETCH (IF) STAGE ----------- ********* //
-    fetch.io.stall := 0.U
+    fetch.io.stall := stallReg
     //fetch.io.inst_in := io.imem_data
     //fetch.io.inst_in := busController.io.data_out
     fetch.io.inst_in := fetchBusController.io.inst
@@ -126,7 +126,7 @@ class Core extends Module {
     fetch.io.hazardDetection_pc_forward := decode.io.hazardDetection_pc_forward
     fetch.io.hazardDetection_inst_forward := decode.io.hazardDetection_inst_forward
 
-    IF_ID.io.stall := 0.U
+    IF_ID.io.stall := stallReg
     IF_ID.io.pc_in := fetch.io.pc_out
     IF_ID.io.pc4_in := fetch.io.pc4_out
     IF_ID.io.inst_in := fetch.io.inst_out
@@ -149,9 +149,9 @@ class Core extends Module {
     decode.io.EX_MEM_alu_output := EX_MEM.io.alu_output
 //    decode.io.dmem_memOut := io.dmem_data
     decode.io.dmem_memOut := loadStoreBusController.io.data.asSInt
-    decode.io.stall := 0.U
+    decode.io.stall := stallReg
 
-    ID_EX.io.stall := 0.U
+    ID_EX.io.stall := stallReg
     ID_EX.io.ctrl_MemWr_in := decode.io.ctrl_MemWr_out
     ID_EX.io.ctrl_MemRd_in := decode.io.ctrl_MemRd_out
     ID_EX.io.ctrl_Branch_in := decode.io.ctrl_Branch_out
@@ -201,7 +201,7 @@ class Core extends Module {
     execute.io.ID_EX_ctrl_RegWr := ID_EX.io.ctrl_RegWr_out
     execute.io.ID_EX_ctrl_MemToReg := ID_EX.io.ctrl_MemToReg_out
 
-    EX_MEM.io.stall := 0.U
+    EX_MEM.io.stall := stallReg
     // Passing the ALU output to the EX/MEM pipeline register
     EX_MEM.io.alu_in := execute.io.alu_output
 
@@ -243,7 +243,7 @@ class Core extends Module {
     loadStoreBusController.io.rs2 := memory_stage.io.rs2_out.asUInt
     loadStoreBusController.io.addr := memory_stage.io.memAddress
 
-    MEM_WB.io.stall := 0.U
+    MEM_WB.io.stall := stallReg
     MEM_WB.io.alu_in := memory_stage.io.alu_output
     //MEM_WB.io.dmem_data_in := io.dmem_data
     MEM_WB.io.dmem_data_in := loadStoreBusController.io.data.asSInt
