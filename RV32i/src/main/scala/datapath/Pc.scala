@@ -12,11 +12,12 @@ class Pc extends Module {
     val reg = RegInit(0.S(32.W))
     when(io.stall =/= 1.U) {
         reg := io.in
-        io.out := reg
-        io.pc4 := reg + 4.S
+
     } .otherwise {
-        io.out := reg
-        io.pc4 := reg + 4.S
+        reg := reg
     }
+
+    io.out := reg
+    io.pc4 := reg + 4.S
 
 }

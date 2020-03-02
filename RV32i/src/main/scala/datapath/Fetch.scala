@@ -24,6 +24,7 @@ class Fetch extends Module {
 
   val pc = Module(new Pc())
   pc.io.stall := io.stall
+  //pc.io.stall := 0.U
   //val imem = Module(new InstructionMem())
 
   //imem.io.wrAddr := pc.io.out(11,2).asUInt
@@ -43,9 +44,10 @@ class Fetch extends Module {
   // is also 0 we have a condition where the PC needs to be stopped for UART. Used next pc select because there is
   // a condition where the instruction is 0 but next pc select has some value for JALR instruction so the pc will not
   // get updated.
-  when(io.inst_in === 0.U && io.ctrl_next_pc_sel === 0.U) {
-    pc.io.in := pc.io.out
-  } .otherwise {
+//  when(io.inst_in === 0.U && io.ctrl_next_pc_sel === 0.U) {
+//    pc.io.in := pc.io.out
+//    //pc.io.stall := 1.U
+//  } .otherwise {
     when(io.hazardDetection_pc_forward === 1.U) {
       pc.io.in := io.hazardDetection_pc_out
     }.otherwise {
@@ -72,7 +74,7 @@ class Fetch extends Module {
         pc.io.in := pc.io.pc4
       }
     }
-  }
+//  }
 
 
 

@@ -3,8 +3,6 @@ import chisel3._
 
 class Core extends Module {
     val io = IO(new Bundle {
-        //val dmem_data = Input(SInt(32.W))
-        //val imem_data = Input(UInt(32.W))
         // Channel D wires coming from the ICCM Controller's slave interface outside the core.
         val iccm_d_opcode = Input(UInt(3.W))
         val iccm_d_source = Input(UInt(32.W))
@@ -17,12 +15,9 @@ class Core extends Module {
         val dccm_d_denied = Input(Bool())
         val dccm_d_valid = Input(Bool())
         val dccm_d_data = Input(UInt(32.W))
-        val reg_out = Output(SInt(32.W))
-        //val imem_wrAddr = Output(UInt(10.W))
-        //val dmem_memWr = Output(UInt(1.W))
-        //val dmem_memRd = Output(UInt(1.W))
-        //val dmem_memAddr = Output(UInt(10.W))
-        //val dmem_memData = Output(SInt(32.W))
+
+        // GPIO values coming in from the GPIO controller to the core for load/store bus controller
+        val GPIO_values = Input(UInt(32.W))
 
         // Channel A outputs from the core to the ICCM controller's slave interface
         val iccm_a_address = Output(UInt(32.W))
@@ -36,7 +31,15 @@ class Core extends Module {
         val dccm_a_opcode = Output(UInt(3.W))
         val dccm_a_source = Output(UInt(32.W))
         val dccm_a_valid = Output(Bool())
+
+        // GPIO set or read outputs from the core to the GPIO Controller
+        val readGPIO = Output(UInt(1.W))
+        val setGPIO = Output(UInt(1.W))
+        val gpioData = Output(UInt(32.W))
+
+
         val reg_7 = Output(SInt(32.W))
+        val reg_out = Output(SInt(32.W))
  })
     val staller = Module(new Staller)
     val fetchBusController = Module(new FetchBusController)
@@ -65,6 +68,7 @@ class Core extends Module {
    io.iccm_a_data := fetchBusController.io.a_data
    io.iccm_a_address := fetchBusController.io.a_address
    staller.io.isUART := fetchBusController.io.stall
+   staller.io.isMMIO := loadStoreBusController.io.stallForMMIO
 
    fetchBusController.io.d_valid := io.iccm_d_valid
    fetchBusController.io.d_source := io.iccm_d_source
@@ -72,8 +76,15 @@ class Core extends Module {
    fetchBusController.io.d_denied := io.iccm_d_denied
    fetchBusController.io.d_data := io.iccm_d_data
 
-   loadStoreBusController.io.isLoad := memReadReg
-   loadStoreBusController.io.isStore := memWriteReg
+   loadStoreBusController.io.isLoad := EX_MEM.io.ctrl_MemRd_out
+   loadStoreBusController.io.isStore := EX_MEM.io.ctrl_MemWr_out
+
+    // Control signals for the GPIO controller
+    io.setGPIO := loadStoreBusController.io.setGPIO
+    io.readGPIO := loadStoreBusController.io.readGPIO
+    io.gpioData := loadStoreBusController.io.setGPIOData
+    // GPIO values being provided to store them in memory
+    loadStoreBusController.io.GPIO_values := io.GPIO_values
 
    loadStoreBusController.io.d_valid := io.dccm_d_valid
    loadStoreBusController.io.d_source := io.dccm_d_source
@@ -88,31 +99,8 @@ class Core extends Module {
    io.dccm_a_valid := loadStoreBusController.io.a_valid
 
 
-//    busController.io.isStalled := staller.io.stall
-//    busController.io.pcAddr := fetch.io.wrAddr.asUInt
-//    busController.io.data_in := memory_stage.io.rs2_out.asUInt
-//    busController.io.memRd := memReadReg
-//    busController.io.memWrt := memWriteReg
-//    busController.io.uartEn := 0.U
-//    busController.io.d_opcode := io.d_opcode
-//    busController.io.d_source := io.d_source
-//    busController.io.d_denied := io.d_denied
-//    busController.io.d_valid := io.d_valid
-//    busController.io.d_data := io.d_data
-//    io.a_opcode := busController.io.a_opcode
-//    io.a_valid := busController.io.a_valid
-//    io.a_source := busController.io.a_source
-//    io.a_data := busController.io.a_data
-//    io.a_address := busController.io.a_address
-
-    //staller.io.ack := busController.io.done
-
-    //io.imem_wrAddr := fetch.io.wrAddr
-     // io.imem_wrAddr := 0.U
     // *********** ----------- INSTRUCTION FETCH (IF) STAGE ----------- ********* //
-    fetch.io.stall := stallReg
-    //fetch.io.inst_in := io.imem_data
-    //fetch.io.inst_in := busController.io.data_out
+    fetch.io.stall := staller.io.stall
     fetch.io.inst_in := fetchBusController.io.inst
     fetch.io.sb_imm := decode.io.sb_imm
     fetch.io.uj_imm := decode.io.uj_imm
@@ -126,7 +114,7 @@ class Core extends Module {
     fetch.io.hazardDetection_pc_forward := decode.io.hazardDetection_pc_forward
     fetch.io.hazardDetection_inst_forward := decode.io.hazardDetection_inst_forward
 
-    IF_ID.io.stall := stallReg
+    IF_ID.io.stall := staller.io.stall
     IF_ID.io.pc_in := fetch.io.pc_out
     IF_ID.io.pc4_in := fetch.io.pc4_out
     IF_ID.io.inst_in := fetch.io.inst_out
@@ -149,9 +137,9 @@ class Core extends Module {
     decode.io.EX_MEM_alu_output := EX_MEM.io.alu_output
 //    decode.io.dmem_memOut := io.dmem_data
     decode.io.dmem_memOut := loadStoreBusController.io.data.asSInt
-    decode.io.stall := stallReg
+    decode.io.stall := staller.io.stall
 
-    ID_EX.io.stall := stallReg
+    ID_EX.io.stall := staller.io.stall
     ID_EX.io.ctrl_MemWr_in := decode.io.ctrl_MemWr_out
     ID_EX.io.ctrl_MemRd_in := decode.io.ctrl_MemRd_out
     ID_EX.io.ctrl_Branch_in := decode.io.ctrl_Branch_out
@@ -201,7 +189,7 @@ class Core extends Module {
     execute.io.ID_EX_ctrl_RegWr := ID_EX.io.ctrl_RegWr_out
     execute.io.ID_EX_ctrl_MemToReg := ID_EX.io.ctrl_MemToReg_out
 
-    EX_MEM.io.stall := stallReg
+    EX_MEM.io.stall := staller.io.stall
     // Passing the ALU output to the EX/MEM pipeline register
     EX_MEM.io.alu_in := execute.io.alu_output
 
@@ -210,7 +198,7 @@ class Core extends Module {
     EX_MEM.io.rs2_sel_in := execute.io.rs2_sel_out
     EX_MEM.io.rs2_in := execute.io.rs2_out
 
-    when(stallReg =/= 1.U) {
+    when(staller.io.stall =/= 1.U) {
       memWriteReg := execute.io.ctrl_MemWr_out
       memReadReg := execute.io.ctrl_MemRd_out
     }
@@ -240,10 +228,10 @@ class Core extends Module {
 
 
 
-    loadStoreBusController.io.rs2 := memory_stage.io.rs2_out.asUInt
-    loadStoreBusController.io.addr := memory_stage.io.memAddress
+    loadStoreBusController.io.rs2 := EX_MEM.io.rs2_out.asUInt
+    loadStoreBusController.io.addr := EX_MEM.io.alu_output(11,2).asUInt
 
-    MEM_WB.io.stall := stallReg
+    MEM_WB.io.stall := staller.io.stall
     MEM_WB.io.alu_in := memory_stage.io.alu_output
     //MEM_WB.io.dmem_data_in := io.dmem_data
     MEM_WB.io.dmem_data_in := loadStoreBusController.io.data.asSInt

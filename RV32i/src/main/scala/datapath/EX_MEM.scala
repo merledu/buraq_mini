@@ -43,23 +43,25 @@ class EX_MEM extends Module {
         reg_rs2_sel := io.rs2_sel_in
         reg_alu_output := io.alu_in
 
-        io.ctrl_MemWr_out := reg_memWr
-        io.ctrl_MemRd_out := reg_memRd
-        io.ctrl_RegWr_out := reg_regWr
-        io.ctrl_MemToReg_out := reg_memToReg
-        io.rs2_out := reg_rs2
-        io.rd_sel_out := reg_rd_sel
-        io.rs2_sel_out := reg_rs2_sel
-        io.alu_output := reg_alu_output
+
     } .otherwise {
-        io.ctrl_MemWr_out := reg_memWr
-        io.ctrl_MemRd_out := reg_memRd
-        io.ctrl_RegWr_out := reg_regWr
-        io.ctrl_MemToReg_out := reg_memToReg
-        io.rs2_out := reg_rs2
-        io.rd_sel_out := reg_rd_sel
-        io.rs2_sel_out := reg_rs2_sel
-        io.alu_output := reg_alu_output
+        reg_memWr := reg_memWr
+        reg_memRd := reg_memRd
+        reg_regWr := reg_regWr
+        reg_memToReg := reg_memToReg
+        reg_rs2 := reg_rs2
+        reg_rd_sel := reg_rd_sel
+        reg_rs2_sel :=  reg_rs2_sel
+        reg_alu_output := reg_alu_output
     }
+
+    io.ctrl_MemWr_out := reg_memWr
+    io.ctrl_MemRd_out := reg_memRd
+    io.ctrl_RegWr_out := reg_regWr
+    io.ctrl_MemToReg_out := reg_memToReg
+    io.rs2_out := reg_rs2
+    io.rd_sel_out := reg_rd_sel
+    io.rs2_sel_out := reg_rs2_sel
+    io.alu_output := reg_alu_output
 
 }
