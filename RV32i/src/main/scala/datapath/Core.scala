@@ -229,7 +229,7 @@ class Core extends Module {
 
 
     loadStoreBusController.io.rs2 := EX_MEM.io.rs2_out.asUInt
-    loadStoreBusController.io.addr := EX_MEM.io.alu_output(11,2).asUInt
+    loadStoreBusController.io.addr := EX_MEM.io.alu_output(11,0).asUInt
 
     MEM_WB.io.stall := staller.io.stall
     MEM_WB.io.alu_in := memory_stage.io.alu_output
