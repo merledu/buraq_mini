@@ -193,9 +193,9 @@ object Launcher {
           (c) => new FetchBusControllerTests(c)
         }
       },
-      "Interconnect" -> { (manager: TesterOptionsManager) =>
-        Driver.execute(() => new Interconnect(), manager) {
-          (c) => new InterconnectTests(c)
+      "Soc" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new Soc(), manager) {
+          (c) => new SocTests(c)
         }
       },
       "DCCMController" -> { (manager: TesterOptionsManager) =>

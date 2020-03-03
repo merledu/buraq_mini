@@ -1,7 +1,7 @@
 package datapath
 import chisel3._
 
-class Interconnect extends Module {
+class Soc extends Module {
   val io = IO(new Bundle {
     val gpio_1 = Input(UInt(1.W))
     val gpio_2 = Input(UInt(1.W))
