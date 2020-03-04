@@ -35,6 +35,7 @@ class Core extends Module {
         // GPIO set or read outputs from the core to the GPIO Controller
         val readGPIO = Output(UInt(1.W))
         val setGPIO = Output(UInt(1.W))
+        // The data to be written to the GPIO pins
         val gpioData = Output(UInt(32.W))
 
 
@@ -44,8 +45,6 @@ class Core extends Module {
     val staller = Module(new Staller)
     val fetchBusController = Module(new FetchBusController)
     val loadStoreBusController = Module(new LoadStoreBusController)
-    //val stallDetection = Module(new StallDetection)
-    //val busController = Module(new BusController)
     val IF_ID = Module(new IF_ID())
     val ID_EX = Module(new ID_EX())
     val EX_MEM = Module(new EX_MEM())
@@ -57,11 +56,15 @@ class Core extends Module {
     val writeback = Module(new WriteBack())
     val memReadReg = RegInit(0.U(32.W))
     val memWriteReg = RegInit(0.U(32.W))
-    val stallReg = RegInit(0.U(1.W))
 
-   stallReg := staller.io.stall
-
+   // Initializing fetch bus controller
    fetchBusController.io.pcAddr := fetch.io.wrAddr.asUInt
+   fetchBusController.io.d_valid := io.iccm_d_valid
+   fetchBusController.io.d_source := io.iccm_d_source
+   fetchBusController.io.d_opcode := io.iccm_d_opcode
+   fetchBusController.io.d_denied := io.iccm_d_denied
+   fetchBusController.io.d_data := io.iccm_d_data
+
    io.iccm_a_valid := fetchBusController.io.a_valid
    io.iccm_a_source := fetchBusController.io.a_source
    io.iccm_a_opcode := fetchBusController.io.a_opcode
@@ -70,27 +73,30 @@ class Core extends Module {
    staller.io.isUART := fetchBusController.io.stall
    staller.io.isMMIO := loadStoreBusController.io.stallForMMIO
 
-   fetchBusController.io.d_valid := io.iccm_d_valid
-   fetchBusController.io.d_source := io.iccm_d_source
-   fetchBusController.io.d_opcode := io.iccm_d_opcode
-   fetchBusController.io.d_denied := io.iccm_d_denied
-   fetchBusController.io.d_data := io.iccm_d_data
 
+   // Initializing load store bus controller
    loadStoreBusController.io.isLoad := EX_MEM.io.ctrl_MemRd_out
    loadStoreBusController.io.isStore := EX_MEM.io.ctrl_MemWr_out
-
-    // Control signals for the GPIO controller
-    io.setGPIO := loadStoreBusController.io.setGPIO
-    io.readGPIO := loadStoreBusController.io.readGPIO
-    io.gpioData := loadStoreBusController.io.setGPIOData
-    // GPIO values being provided to store them in memory
-    loadStoreBusController.io.GPIO_values := io.GPIO_values
-
    loadStoreBusController.io.d_valid := io.dccm_d_valid
    loadStoreBusController.io.d_source := io.dccm_d_source
    loadStoreBusController.io.d_opcode := io.dccm_d_opcode
    loadStoreBusController.io.d_denied := io.dccm_d_denied
    loadStoreBusController.io.d_data := io.dccm_d_data
+   // GPIO values being provided to store them in memory
+   loadStoreBusController.io.GPIO_values := io.GPIO_values
+   // The rs2 value that needs to be stored in the memory
+   loadStoreBusController.io.rs2 := EX_MEM.io.rs2_out.asUInt
+   // The alu output which tells the address for storing the data in memory.
+   loadStoreBusController.io.addr := EX_MEM.io.alu_output(11,0).asUInt
+
+
+    // Control signals for the GPIO controller
+    io.setGPIO := loadStoreBusController.io.setGPIO
+    io.readGPIO := loadStoreBusController.io.readGPIO
+    io.gpioData := loadStoreBusController.io.setGPIOData
+
+
+
 
    io.dccm_a_address := loadStoreBusController.io.a_address
    io.dccm_a_data := loadStoreBusController.io.a_data
@@ -228,8 +234,7 @@ class Core extends Module {
 
 
 
-    loadStoreBusController.io.rs2 := EX_MEM.io.rs2_out.asUInt
-    loadStoreBusController.io.addr := EX_MEM.io.alu_output(11,0).asUInt
+
 
     MEM_WB.io.stall := staller.io.stall
     MEM_WB.io.alu_in := memory_stage.io.alu_output

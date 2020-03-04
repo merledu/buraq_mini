@@ -209,7 +209,7 @@ class LoadStoreBusController extends Module {
       }
 
     }
-  } .elsewhen(address === 129.U) {    // GPIO out memory address
+  } .elsewhen(address === 129.U) {
     // The 129th row in memory is set for gpio pin out data
     master.io.memRd := 0.U
     master.io.memWrt := 0.U
@@ -262,7 +262,7 @@ class LoadStoreBusController extends Module {
         }
       }
       is(writeDataToGPIOMemory) {
-        // Writing the data received from register to the memory
+        // Writing the data received from EX/MEM pipeline register to the memory
         io.stallForMMIO := 1.U
         io.readGPIO := 0.U
         io.setGPIO := 1.U
