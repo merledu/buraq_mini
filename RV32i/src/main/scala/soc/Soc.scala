@@ -26,11 +26,11 @@ class Soc extends Module {
   val gpio = Module(new GPIOController)
 
 
-  core.io.iccm_d_valid := iccmController.io.d_valid
-  core.io.iccm_d_source := iccmController.io.d_source
-  core.io.iccm_d_opcode := iccmController.io.d_opcode
-  core.io.iccm_d_denied := iccmController.io.d_denied
-  core.io.iccm_d_data := iccmController.io.d_data
+  core.io.iccm_d_valid := iccmController.io.fetchSlaveIO.d_valid
+  core.io.iccm_d_source := iccmController.io.fetchSlaveIO.d_source
+  core.io.iccm_d_opcode := iccmController.io.fetchSlaveIO.d_opcode
+  core.io.iccm_d_denied := iccmController.io.fetchSlaveIO.d_denied
+  core.io.iccm_d_data := iccmController.io.fetchSlaveIO.d_data
 
   core.io.dccm_d_valid := dccmController.io.d_valid
   core.io.dccm_d_source := dccmController.io.d_source
@@ -38,11 +38,11 @@ class Soc extends Module {
   core.io.dccm_d_denied := dccmController.io.d_denied
   core.io.dccm_d_data := dccmController.io.d_data
 
-  iccmController.io.a_valid := core.io.iccm_a_valid
-  iccmController.io.a_source := core.io.iccm_a_source
-  iccmController.io.a_opcode := core.io.iccm_a_opcode
-  iccmController.io.a_data := core.io.iccm_a_data
-  iccmController.io.a_address := core.io.iccm_a_address
+  iccmController.io.fetchSlaveIO.a_valid := core.io.iccm_a_valid
+  iccmController.io.fetchSlaveIO.a_source := core.io.iccm_a_source
+  iccmController.io.fetchSlaveIO.a_opcode := core.io.iccm_a_opcode
+  iccmController.io.fetchSlaveIO.a_data := core.io.iccm_a_data
+  iccmController.io.fetchSlaveIO.a_address := core.io.iccm_a_address
 
   dccmController.io.a_valid := core.io.dccm_a_valid
   dccmController.io.a_source := core.io.dccm_a_source
