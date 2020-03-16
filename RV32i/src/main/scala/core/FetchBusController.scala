@@ -6,6 +6,15 @@ import merl.uit.tilelink.MasterInterface
 class FetchBusControllerIO extends Bundle {
   // PC input coming in from the fetch module in core.
   val pcAddr = Input(UInt(32.W))
+
+  /** signal coming in from the UART Controller telling whether UART is
+   * done writing the instruction memory. If done then the fetch bus
+   * controller must remove the stall from the core, read the instruction
+   * and send it to the pipeline*
+   * Initially UART_DONE    -->   false
+   * After updating memory  -->   true
+   **/
+  val UART_DONE = Input(Bool())
   // Channel D properties coming in from the slave interface inside ICCM Controller
   val d_opcode = Input(UInt(3.W))
   val d_source = Input(UInt(32.W))
@@ -18,10 +27,16 @@ class FetchBusControllerIO extends Bundle {
   val a_opcode = Output(UInt(3.W))
   val a_source = Output(UInt(32.W))
   val a_valid = Output(Bool())
-  // Stall pin going to the staller module indicating the staller to stall the core since we need to enable UART communication
+  /**
+   * Stall pin going to the staller module indicating the staller to stall the core.
+   * This pin is also connected with the UART controller telling that it can now start to receive items from Tx.
+   * This pin is also connected with the ICCM controller telling that it needs to set the output of ICCM controller
+   * to the instruction memory according to the UART scenario and not the FETCH scenario.
+   */
   val stall = Output(UInt(1.W))
   // Instruction output going to the Fetch module
   val inst = Output(UInt(32.W))
+
 }
 
 class FetchBusController extends Module {
@@ -45,13 +60,19 @@ class FetchBusController extends Module {
   io.a_valid := miIccmSlave.io.a_valid
 
 
-  when(miIccmSlave.io.data === 0.U && io.pcAddr === 0.U) {
+  io.inst := miIccmSlave.io.data
+  io.stall := 0.U
+
+  when(miIccmSlave.io.data === 0.U && io.pcAddr === 0.U && io.UART_DONE === false.B) {
     io.inst := 0.U
     io.stall := 1.U
-  } .otherwise {
-    io.inst := miIccmSlave.io.data
-    io.stall := 0.U
   }
+  when(miIccmSlave.io.data =/= 0.U && io.pcAddr === 0.U && io.UART_DONE === false.B) {
+    io.inst := 0.U
+    io.stall := 1.U
+    }
+
+
 
 }
 

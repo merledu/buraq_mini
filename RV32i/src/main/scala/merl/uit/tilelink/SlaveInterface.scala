@@ -149,8 +149,6 @@ class SlaveInterface(forFetch: Boolean) extends Module with ChannelD {
 
   } else {
 
-
-
         io.addr_out := io.a_address
         io.data_out := 0.U
         io.en := 0.U

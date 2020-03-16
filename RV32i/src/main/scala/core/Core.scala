@@ -20,6 +20,13 @@ class Core extends Module {
         // GPIO values coming in from the GPIO controller to the core for load/store bus controller
         val GPIO_values = Input(UInt(32.W))
 
+        /**
+         * The done pin coming in from the UART Controller intended to go into the FetchBusController
+         * through the core. It's purpose is to tell the FetchBusController that UART is done writing
+         * to the memory and the FetchBusController can remove the stall from the core and continue to
+         * fetch the instructions from the Instruction memory*/
+        val UART_DONE = Input(Bool())
+
         // Channel A outputs from the core to the ICCM controller's slave interface
         val iccm_a_address = Output(UInt(32.W))
         val iccm_a_data = Output(UInt(32.W))
@@ -39,6 +46,10 @@ class Core extends Module {
         // The data to be written to the GPIO pins
         val gpioData = Output(UInt(32.W))
 
+        /**
+         * The stall pin output coming from the FetchBusController going out from the core for UART Controller
+         * as well as for ICCM Controller*/
+        val isStalled = Output(Bool())
 
         val reg_7 = Output(SInt(32.W))
         val reg_out = Output(SInt(32.W))
@@ -65,6 +76,7 @@ class Core extends Module {
    fetchBusController.io.d_opcode := io.iccm_d_opcode
    fetchBusController.io.d_denied := io.iccm_d_denied
    fetchBusController.io.d_data := io.iccm_d_data
+   fetchBusController.io.UART_DONE := io.UART_DONE
 
    io.iccm_a_valid := fetchBusController.io.a_valid
    io.iccm_a_source := fetchBusController.io.a_source
@@ -73,6 +85,9 @@ class Core extends Module {
    io.iccm_a_address := fetchBusController.io.a_address
    staller.io.isUART := fetchBusController.io.stall
    staller.io.isMMIO := loadStoreBusController.io.stallForMMIO
+
+   // Stall pin output from the core.
+   io.isStalled := fetchBusController.io.stall
 
 
    // Initializing load store bus controller

@@ -9,15 +9,15 @@ class Top extends Module{
     val inst_out = Output(UInt(32.W))
   })
 
-  val uartController = Module(new UartController(10000,3000))
-  val iccm = Module(new Iccm)
-
-  uartController.io.rxd := io.rxd_in
-  uartController.io.ready := io.ready
-
-  iccm.io.addr := uartController.io.addr
-  iccm.io.en := uartController.io.en
-  iccm.io.data_in := uartController.io.finalData
-
-  io.inst_out := iccm.io.data_out
+//  val uartController = Module(new UartController(10000,3000))
+//  val iccm = Module(new Iccm)
+//
+//  uartController.io.rxd := io.rxd_in
+//  uartController.io.ready := io.ready
+//
+//  iccm.io.addr := uartController.io.addr
+//  iccm.io.en := uartController.io.en
+//  iccm.io.data_in := uartController.io.finalData
+//
+//  io.inst_out := iccm.io.data_out
 }

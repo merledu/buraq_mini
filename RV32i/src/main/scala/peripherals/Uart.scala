@@ -14,7 +14,6 @@ class UartIO extends DecoupledIO(UInt(8.W)) {
  * Use a ready/valid handshaking.
  */
 
-
 class Tx(frequency: Int, baudRate: Int) extends Module {
   val io = IO(new Bundle {
     val txd = Output(UInt(1.W))
