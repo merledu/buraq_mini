@@ -2,11 +2,19 @@ package merl.uit.tilelink
 import chisel3._
 import chisel3.util._
 
+/** 
+* * This is the master interface according to the Tilelink specification
+*/
+
+/** 
+* * MasterInterfaceIO is the bundle class which declares the input/output for the master interface module
+*/
 class MasterInterfaceIO extends Bundle {
-  // State control inputs from the core
+  // State control inputs. This tells the master interface either the module wants to perform
+  // a Get or a PullFullData operation.
   val memRd = Input(UInt(1.W))
   val memWrt = Input(UInt(1.W))
-  //val uartEn = Input(UInt(1.W))
+
   // Inputs from the calling Module
   val addr_in = Input(UInt(32.W))
   val data_in = Input(UInt(32.W))
