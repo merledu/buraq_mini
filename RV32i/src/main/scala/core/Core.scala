@@ -66,8 +66,6 @@ class Core extends Module {
     val execute = Module(new Execute())
     val memory_stage = Module(new MemoryStage())
     val writeback = Module(new WriteBack())
-    val memReadReg = RegInit(0.U(32.W))
-    val memWriteReg = RegInit(0.U(32.W))
 
    // Initializing fetch bus controller
    fetchBusController.io.pcAddr := fetch.io.wrAddr.asUInt
@@ -219,11 +217,6 @@ class Core extends Module {
     EX_MEM.io.rd_sel_in := execute.io.rd_sel_out
     EX_MEM.io.rs2_sel_in := execute.io.rs2_sel_out
     EX_MEM.io.rs2_in := execute.io.rs2_out
-
-    when(staller.io.stall =/= 1.U) {
-      memWriteReg := execute.io.ctrl_MemWr_out
-      memReadReg := execute.io.ctrl_MemRd_out
-    }
 
     // Passing the control signals to EX/MEM pipeline register and (memRead / memWrite control registers for stall detection unit)
     EX_MEM.io.ctrl_MemWr_in := execute.io.ctrl_MemWr_out
