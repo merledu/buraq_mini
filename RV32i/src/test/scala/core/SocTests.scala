@@ -34,39 +34,6 @@ class SocTests(c: Soc) extends PeekPokeTester (c){
     pokeUart(byte4.toInt)
   }
 
-
- // printf("First two LSB %s".format(inst.slice(8, 10)))
-
-
-  // 32 bit data payload
-//  pokeUart(0x13.toInt)
-//  pokeUart(0x01.toInt)
-//  pokeUart(0x20.toInt)
-//  pokeUart(0x00.toInt)
-//
-//  // Another 32-bit data payload
-//  pokeUart(0x93.toInt)
-//  pokeUart(0x01.toInt)
-//  pokeUart(0x10.toInt)
-//  pokeUart(0x00.toInt)
-//
-//  // Another 32-bit data payload
-//  pokeUart(0x33.toInt)
-//  pokeUart(0x02.toInt)
-//  pokeUart(0x31.toInt)
-//  pokeUart(0x00.toInt)
-//
-//  // The data payload which tells the uart that program to be loaded is finished
-//  pokeUart(0xff.toInt)
-//  pokeUart(0x0f.toInt)
-//  pokeUart(0x00.toInt)
-//  pokeUart(0x00.toInt)
-
-
-  step(5)
-
-
-
   def pokeUart(value: Int): Unit = {
 
     // start bit
@@ -80,13 +47,7 @@ class SocTests(c: Soc) extends PeekPokeTester (c){
     // stop bit
     poke(c.io.rxd, 1)
     step(2)
-
-    // read it out
-    poke(c.io.ready, 1)
-    step(1)
-    poke(c.io.ready, 0)
-    step(1)
   }
-
   step(100)
 }
+

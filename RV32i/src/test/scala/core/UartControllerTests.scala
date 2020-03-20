@@ -43,11 +43,7 @@ class UartControllerTests(c: UartController) extends PeekPokeTester (c){
         poke(c.io.rxd, 1)
         step(2)
 
-        // read it out
-        poke(c.io.ready, 1)
-        step(1)
-        poke(c.io.ready, 0)
-        step(1)
+        
     }
 
 

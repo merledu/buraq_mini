@@ -187,7 +187,7 @@ object Launcher {
         }
       },
       "UartController" -> { (manager: TesterOptionsManager) =>
-        Driver.execute(() => new UartController(10000, 3000), manager) {
+        Driver.execute(() => new UartController(50000000, 115200), manager) {
           (c) => new UartControllerTests(c)
         }
       },

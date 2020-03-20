@@ -10,7 +10,6 @@ class Soc extends Module {
     val gpio_3 = Input(UInt(1.W))
     val gpio_4 = Input(UInt(1.W))
     val rxd = Input(UInt(1.W))
-    val ready = Input(Bool())
 
     val gpio_5 = Output(UInt(1.W))
     val gpio_6 = Output(UInt(1.W))
@@ -64,7 +63,6 @@ class Soc extends Module {
 
   uartController.io.isStalled := core.io.isStalled
   uartController.io.rxd := io.rxd
-  uartController.io.ready := io.ready
 
   dccmController.io.a_valid := core.io.dccm_a_valid
   dccmController.io.a_source := core.io.dccm_a_source

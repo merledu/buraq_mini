@@ -28,7 +28,6 @@ class UartController(frequency: Int, baudRate: Int) extends Module{
     val masterInterfaceIO = new MasterInterfaceIO()
 
     val rxd = Input(UInt(1.W))
-    val ready = Input(Bool())
 
 //    val finalData = Output(UInt(32.W))
 //    val addr = Output(UInt(10.W))
@@ -49,7 +48,6 @@ class UartController(frequency: Int, baudRate: Int) extends Module{
 
   val rx = Module(new Rx(frequency, baudRate))
   rx.io.rxd := io.rxd
-  rx.io.channel.ready := io.ready
 
   val dataReg = RegInit(0.U(8.W))
   val regLSB1 = RegInit(0.U(8.W))
@@ -60,7 +58,8 @@ class UartController(frequency: Int, baudRate: Int) extends Module{
   when(io.isStalled && !regDone) {
     when(rx.io.channel.valid === 1.U) {
       // We get 1 byte of data from the Rx module
-      dataReg := rx.io.channel.bits
+      // dataReg := rx.io.channel.bits
+      dataReg := rx.io.channel.data
       count := count + 1.U
       regEn := false.B
     }
