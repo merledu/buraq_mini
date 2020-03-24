@@ -13,6 +13,7 @@ class Execute extends Module {
     val ID_EX_ctrl_OpA_sel = Input(UInt(2.W))
     val ID_EX_ctrl_OpB_sel = Input(UInt(1.W))
     val ID_EX_pc4 = Input(SInt(32.W))
+    val ID_EX_pc_out = Input(SInt(32.W))
     val ID_EX_rs1 = Input(SInt(32.W))
     val ID_EX_rs2 = Input(SInt(32.W))
     val EX_MEM_alu_output = Input(SInt(32.W))
@@ -54,7 +55,12 @@ class Execute extends Module {
   // Controlling Operand A for ALU
   when (io.ID_EX_ctrl_OpA_sel === "b10".U) {
     alu.io.oper_a := io.ID_EX_pc4
-  } .otherwise {
+  }
+  .elsewhen(io.ID_EX_ctrl_OpA_sel === "b01".U)
+   {
+      alu.io.oper_a := io.ID_EX_pc_out 
+   }
+ .otherwise {
     when(forwardUnit.io.forward_a === "b00".U) {
       alu.io.oper_a := io.ID_EX_rs1
     } .elsewhen(forwardUnit.io.forward_a === "b01".U) {
