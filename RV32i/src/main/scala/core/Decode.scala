@@ -69,7 +69,6 @@ class Decode extends Module {
   hazardDetection.io.ID_EX_REGRD := io.ID_EX_rd_sel
   hazardDetection.io.pc_in := io.IF_ID_pc4
   hazardDetection.io.current_pc := io.IF_ID_pc
-  hazardDetection.io.IF_ID_MEMREAD := control.io.out_memRead
 
   // Sending hazard detection outputs for Fetch
   io.hazardDetection_pc_out := hazardDetection.io.pc_out
