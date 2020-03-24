@@ -185,7 +185,7 @@ class Core extends Module {
 
 
     // *********** ----------- EXECUTION (EX) STAGE ----------- ********* //
-
+    execute.io.ID_EX_pc_out  := ID_EX.io.pc_out
     execute.io.EX_MEM_rd_sel := EX_MEM.io.rd_sel_out
     execute.io.MEM_WB_rd_sel := MEM_WB.io.rd_sel_out
     execute.io.ID_EX_rs1_sel := ID_EX.io.rs1_sel_out
