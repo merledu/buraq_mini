@@ -9,6 +9,7 @@ class HazardDetection extends Module {
     val ID_EX_REGRD = Input(UInt(5.W))
     val pc_in = Input(SInt(32.W))
     val current_pc = Input(SInt(32.W))
+    val IF_ID_MEMREAD = Input(UInt(1.W))
     val inst_forward = Output(UInt(1.W))
     val pc_forward = Output(UInt(1.W))
     val ctrl_forward = Output(UInt(1.W))
@@ -18,6 +19,8 @@ class HazardDetection extends Module {
   })
   val rs1_sel = io.IF_ID_INST(19, 15)
   val rs2_sel = io.IF_ID_INST(24, 20)
+when(io.IF_ID_MEMREAD === "b1".U)
+{
   when(io.ID_EX_MEMREAD === "b1".U && ((io.ID_EX_REGRD === rs1_sel) || (io.ID_EX_REGRD === rs2_sel))) {
       io.inst_forward := 1.U
       io.pc_forward := 1.U
@@ -34,4 +37,5 @@ class HazardDetection extends Module {
     io.pc_out := io.pc_in         // Doesn't matter if we pass the old pc value forward because it won't be selected by the mux
     io.current_pc_out := io.current_pc
   }
+}
 }
