@@ -54,7 +54,12 @@ class Execute extends Module {
   // Controlling Operand A for ALU
   when (io.ID_EX_ctrl_OpA_sel === "b10".U) {
     alu.io.oper_a := io.ID_EX_pc4
-  } .otherwise {
+  }
+  .elsewhen(io.ID_EX_ctrl_OpA_sel === "b01".U)
+   {
+      alu.io.oper_a := io.ID_EX_pc_out 
+   }
+ .otherwise {
     when(forwardUnit.io.forward_a === "b00".U) {
       alu.io.oper_a := io.ID_EX_rs1
     } .elsewhen(forwardUnit.io.forward_a === "b01".U) {
