@@ -43,7 +43,7 @@ class HazardDetection extends Module {
   }
   
 
-  def stalling_conditions(): Unit =
+  def createStall(): Unit =
   {
       io.inst_forward := 1.U
       io.pc_forward := 1.U
@@ -63,4 +63,3 @@ class HazardDetection extends Module {
 
 }
 }
-
