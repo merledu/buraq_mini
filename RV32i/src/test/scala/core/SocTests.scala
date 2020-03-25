@@ -3,18 +3,18 @@ import scala.io.Source
 import chisel3.iotesters.PeekPokeTester
 import soc.Soc
 
-class SocTests(c: Soc) extends PeekPokeTester (c){
+class SocTests(c: Soc, filePath: String) extends PeekPokeTester (c){
 //  poke(c.io.gpio_1, 1)
 //  poke(c.io.gpio_2, 0)
 //  poke(c.io.gpio_3, 0)
 //  poke(c.io.gpio_4, 1)
-val filePath = "/Users/mbp/Desktop/mem1.txt"
+
 val bufferedSource =  Source.fromFile(filePath)
 val fileData = bufferedSource.getLines.toArray
 // We create an array insts by reading the lines from the text file and parsing the string
 // as hexadecimal. The parse function does not accept 0x literals so we used substring(2)
 // to get rid of the first two characters which are 0x finally "yielding" it into an array.
-val insts = for (i <- fileData) yield java.lang.Long.parseLong(i.substring(2), 16)
+val insts = for (i <- fileData) yield java.lang.Long.parseLong(i, 16)
 // closing the opened file
 bufferedSource.close
 
