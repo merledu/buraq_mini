@@ -52,7 +52,7 @@ class HazardDetection extends Module {
       io.pc_out := io.pc_in
       io.current_pc_out := io.current_pc
   }
-  def default_conditons(): Unit =
+  def createNoStall(): Unit =
   {
     io.inst_forward := 0.U
     io.pc_forward := 0.U
