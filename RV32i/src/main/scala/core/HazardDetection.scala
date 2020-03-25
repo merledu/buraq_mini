@@ -62,4 +62,5 @@ class HazardDetection extends Module {
     io.current_pc_out := io.current_pc
 
 }
+}
 
