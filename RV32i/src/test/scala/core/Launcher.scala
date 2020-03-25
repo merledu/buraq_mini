@@ -173,7 +173,7 @@ object Launcher {
       },
       "Soc" -> { (manager: TesterOptionsManager) =>
         Driver.execute(() => new Soc(), manager) {
-          (c) => new SocTests(c, "/Users/mbp/Desktop/mem1.txt")
+          (c) => new SocTests(c, "/home/sajjad/Desktop/Buraq-mini/RV32i/instructions.txt")
         }
       },
       "DCCMController" -> { (manager: TesterOptionsManager) =>
