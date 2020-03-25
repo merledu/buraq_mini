@@ -27,7 +27,7 @@ class HazardDetection extends Module {
       } 
       .otherwise 
       {
-         default_conditons()
+         createNoStall()
       }
   }
   .otherwise
