@@ -34,7 +34,7 @@ class HazardDetection extends Module {
   {
     when(io.ID_EX_MEMREAD === "b1".U && ((io.ID_EX_REGRD === rs1_sel) || (io.ID_EX_REGRD === rs2_sel)))
      {
-        stalling_conditions()
+        createStall()
      } 
      .otherwise 
      {
