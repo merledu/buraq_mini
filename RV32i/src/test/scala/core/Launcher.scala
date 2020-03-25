@@ -173,7 +173,7 @@ object Launcher {
       },
       "Soc" -> { (manager: TesterOptionsManager) =>
         Driver.execute(() => new Soc(), manager) {
-          (c) => new SocTests(c)
+          (c) => new SocTests(c, "/Users/mbp/Desktop/mem1.txt")
         }
       },
       "DCCMController" -> { (manager: TesterOptionsManager) =>
