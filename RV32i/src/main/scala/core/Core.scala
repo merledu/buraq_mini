@@ -101,7 +101,9 @@ class Core extends Module {
    // The rs2 value that needs to be stored in the memory
    loadStoreBusController.io.rs2 := EX_MEM.io.rs2_out.asUInt
    // The alu output which tells the address for storing the data in memory.
-   loadStoreBusController.io.addr := EX_MEM.io.alu_output(11,0).asUInt
+   loadStoreBusController.io.addr := EX_MEM.io.alu_output(21,0).asUInt
+   // function 3 value which is used t detect the type of load or store instructions e.g, sw,sb,lb,lw
+   loadStoreBusController.io.func3 := EX_MEM.io.EX_MEM_func3_out
 
 
     // Control signals for the GPIO controller
@@ -217,6 +219,7 @@ class Core extends Module {
     EX_MEM.io.rd_sel_in := execute.io.rd_sel_out
     EX_MEM.io.rs2_sel_in := execute.io.rs2_sel_out
     EX_MEM.io.rs2_in := execute.io.rs2_out
+    EX_MEM.io.EX_MEM_func3     := execute.io.func3_out
 
     // Passing the control signals to EX/MEM pipeline register and (memRead / memWrite control registers for stall detection unit)
     EX_MEM.io.ctrl_MemWr_in := execute.io.ctrl_MemWr_out
@@ -235,6 +238,7 @@ class Core extends Module {
     memory_stage.io.EX_MEM_MemToReg := EX_MEM.io.ctrl_MemToReg_out
     memory_stage.io.EX_MEM_MemWr := EX_MEM.io.ctrl_MemWr_out
     memory_stage.io.EX_MEM_rs2 := EX_MEM.io.rs2_out
+    // memory_stage.io.func3      := EX_MEM.io.EX_MEM_func3_out
 
     //io.dmem_memWr := memory_stage.io.ctrl_MemWr_out
     //io.dmem_memRd := memory_stage.io.ctrl_MemRd_out

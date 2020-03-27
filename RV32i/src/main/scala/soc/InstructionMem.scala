@@ -18,13 +18,13 @@ class InstructionMem extends Module {
 //    //io.readData := "h00200093".U
 
   val io = IO(new Bundle {
-    val addr = Input(UInt(10.W))
+    val addr = Input(UInt(32.W))
     val en = Input(Bool())
     val data_in = Input(UInt(32.W))
     val data_out = Output(UInt(32.W))
   })
 
-  val mem = Mem(1024, UInt(32.W))
+  val mem = Mem(1048576, UInt(32.W))
   when(io.en) {
     mem.write(io.addr, io.data_in)
     io.data_out := 0.U

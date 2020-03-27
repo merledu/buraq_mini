@@ -9,6 +9,7 @@ class LoadStoreBusControllerIO extends Bundle {
   val isLoad = Input(Bool())
   val isStore = Input(Bool())
   val rs2 = Input(UInt(32.W))
+  val func3 = Input(UInt(3.W))
   // The address is now 12 bits. The same 10 bits are used for addressing and the 2 LSB bits are used to indicate
   // which GPIO needs to be read in case of a read operation (Store instruction)
   // 00 -> gpio pin 1
@@ -47,6 +48,7 @@ class LoadStoreBusControllerIO extends Bundle {
 }
 
 class LoadStoreBusController extends Module {
+  
   val io = IO(new LoadStoreBusControllerIO)
   val master = Module(new MasterInterface(sourceId = 2.U, forFetch = false))
   // Extracting the same 10 bits from the address bits for memory addressing
@@ -318,6 +320,8 @@ class LoadStoreBusController extends Module {
   }
     .otherwise {
         // This is for normal load and stores instruction
+        val load = Module(new Load_unit())
+        val store= Module(new Store_unit())
         io.stallForMMIO := 0.U
         io.readGPIO := 0.U
         io.setGPIO := 0.U
@@ -325,7 +329,12 @@ class LoadStoreBusController extends Module {
           master.io.memRd := io.isLoad
           master.io.memWrt := io.isStore
           master.io.addr_in := address
-          master.io.data_in := io.rs2
+          // store unit 
+          store.io.MemWrite := io.isStore
+          store.io.func3    := io.func3
+          store.io.Rs2      := io.rs2
+         // master.io.data_in := io.rs2
+          master.io.data_in := store.io.StoreData
 
         io.a_address := master.io.a_address
         io.a_data := master.io.a_data
@@ -338,7 +347,14 @@ class LoadStoreBusController extends Module {
         master.io.d_opcode := io.d_opcode
         master.io.d_denied := io.d_denied
         master.io.d_data := io.d_data
-        io.data := master.io.data
+        // load unit
+
+        load.io.MemRead  := io.isLoad
+        load.io.func3    := io.func3
+        load.io.MemData  := master.io.data
+       
+       // io.data := master.io.data
+        io.data  := load.io.LoadData
         io.setGPIOData := 0.U
       }
 

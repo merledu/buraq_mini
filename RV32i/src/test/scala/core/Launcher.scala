@@ -151,6 +151,16 @@ object Launcher {
           (c) => new StallerTests(c)
         }
       },
+      "Store_unit" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new Store_unit(), manager) {
+          (c) => new Store_unitTests(c)
+        }
+      },
+      "Load_unit" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new Load_unit(), manager) {
+          (c) => new Load_unitTests(c)
+        }
+      },
       "MasterInterface" -> { (manager: TesterOptionsManager) =>
         Driver.execute(() => new MasterInterface(1.U, false), manager) {
           (c) => new MasterInterfaceTests(c)

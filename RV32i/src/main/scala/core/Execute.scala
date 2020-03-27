@@ -37,6 +37,7 @@ class Execute extends Module {
     val ctrl_MemRd_out = Output(UInt(1.W))
     val ctrl_RegWr_out = Output(UInt(1.W))
     val ctrl_MemToReg_out = Output(UInt(1.W))
+    val func3_out        = Output(UInt(3.W)) 
   })
 
 
@@ -116,7 +117,7 @@ class Execute extends Module {
   // Passing the rd_sel value in the EX/MEM pipeline register
   io.rd_sel_out := io.ID_EX_rd_sel
   io.rs2_sel_out := io.ID_EX_rs2_sel
-
+  io.func3_out := io.ID_EX_func3
   // Passing the control signals to EX/MEM pipeline register
   io.ctrl_MemWr_out := io.ID_EX_ctrl_MemWr
   io.ctrl_MemRd_out := io.ID_EX_ctrl_MemRd

@@ -14,7 +14,7 @@ class MemoryStage extends Module {
 
     val alu_output = Output(SInt(32.W))
     val rs2_out = Output(SInt(32.W))
-    val memAddress = Output(UInt(10.W))
+    val memAddress = Output(UInt(32.W))
     val rd_sel_out = Output(UInt(5.W))
     val ctrl_RegWr_out = Output(UInt(1.W))
     val ctrl_MemRd_out = Output(UInt(1.W))
@@ -25,7 +25,7 @@ class MemoryStage extends Module {
 
 
     io.alu_output := io.EX_MEM_alu_output
-    io.memAddress := io.EX_MEM_alu_output(11, 2).asUInt
+    io.memAddress := (io.EX_MEM_alu_output(21, 0)>>2).asUInt
     io.rs2_out := io.EX_MEM_rs2
     io.rd_sel_out := io.EX_MEM_rd_sel
     io.ctrl_RegWr_out := io.EX_MEM_RegWr
