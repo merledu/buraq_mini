@@ -12,6 +12,7 @@ class EX_MEM extends Module {
         val rd_sel_in = Input(UInt(5.W))
         val rs2_sel_in = Input(UInt(5.W))
         val alu_in = Input(SInt(32.W))
+         val EX_MEM_func3 = Input(UInt(3.W))
 
         val stall = Input(UInt(1.W))
 
@@ -23,6 +24,7 @@ class EX_MEM extends Module {
         val rd_sel_out = Output(UInt(5.W))
         val rs2_sel_out = Output(UInt(5.W))
         val alu_output = Output(SInt(32.W))
+        val EX_MEM_func3_out  = Output(UInt(3.W))
 
     })
         val reg_memWr = RegInit(0.U(1.W))
@@ -33,6 +35,7 @@ class EX_MEM extends Module {
         val reg_rd_sel = RegInit(0.U(5.W))
         val reg_rs2_sel = RegInit(0.U(5.W))
         val reg_alu_output = RegInit(0.S(32.W))
+        val reg_func3      = RegInit(0.U(3.W))
 
     when(io.stall =/= 1.U) {
         reg_memWr := io.ctrl_MemWr_in
@@ -43,6 +46,7 @@ class EX_MEM extends Module {
         reg_rd_sel := io.rd_sel_in
         reg_rs2_sel := io.rs2_sel_in
         reg_alu_output := io.alu_in
+        reg_func3      := io.EX_MEM_func3
 
 
     } .otherwise {
@@ -54,6 +58,7 @@ class EX_MEM extends Module {
         reg_rd_sel := reg_rd_sel
         reg_rs2_sel :=  reg_rs2_sel
         reg_alu_output := reg_alu_output
+        reg_func3     := reg_func3
     }
 
     io.ctrl_MemWr_out := reg_memWr
@@ -64,5 +69,6 @@ class EX_MEM extends Module {
     io.rd_sel_out := reg_rd_sel
     io.rs2_sel_out := reg_rs2_sel
     io.alu_output := reg_alu_output
+    io.EX_MEM_func3_out := reg_func3
 
 }

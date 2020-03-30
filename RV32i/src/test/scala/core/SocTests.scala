@@ -60,4 +60,3 @@ bufferedSource.close
   }
   step(900000)
 }
-
