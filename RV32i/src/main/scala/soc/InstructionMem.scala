@@ -24,7 +24,7 @@ class InstructionMem extends Module {
     val data_out = Output(UInt(32.W))
   })
 
-  val mem = Mem(4096, UInt(32.W))
+  val mem = Mem(1048576, UInt(32.W))
   when(io.en) {
     mem.write(io.addr, io.data_in)
     io.data_out := 0.U
