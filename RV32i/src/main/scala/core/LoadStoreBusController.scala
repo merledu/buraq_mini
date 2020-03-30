@@ -212,8 +212,8 @@ class LoadStoreBusController extends Module {
       }
 
     }
-  } .elsewhen(address === 129.U) {
-    // The 129th row in memory is set for gpio pin out data
+  } .elsewhen(address === 256.U) {
+    // The 256th row in memory is set for gpio pin out data
     master.io.memRd := 0.U
     master.io.memWrt := 0.U
     master.io.addr_in := 0.U
