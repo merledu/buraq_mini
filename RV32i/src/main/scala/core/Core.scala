@@ -184,6 +184,9 @@ class Core extends Module {
     ID_EX.io.rs1_sel_in := decode.io.rs1_sel_out
     ID_EX.io.rs2_sel_in := decode.io.rs2_sel_out
 
+    decode.io.execute_regwrite := ID_EX.io.ctrl_RegWr_out
+    decode.io.mem_regwrite     := EX_MEM.io.ctrl_RegWr_out
+    decode.io.wb_regwrite      := MEM_WB.io.ctrl_RegWr_out
 
 
     // *********** ----------- EXECUTION (EX) STAGE ----------- ********* //
