@@ -16,7 +16,7 @@ class LoadStoreBusControllerIO extends Bundle {
   // 01 -> gpio pin2
   // 10 -> gpio pin3
   // 11 -> gpio pin 4
-  val addr = Input(UInt(12.W))
+  val addr = Input(UInt(22.W))
 
   // The GPIO values coming from the gpio 1,2,3,4 input pins to the core and then to the load store bus controller
   val GPIO_values = Input(UInt(4.W))
@@ -52,7 +52,7 @@ class LoadStoreBusController extends Module {
   val io = IO(new LoadStoreBusControllerIO)
   val master = Module(new MasterInterface(sourceId = 2.U, forFetch = false))
   // Extracting the same 10 bits from the address bits for memory addressing
-  val address = io.addr(11,2)
+  val address = io.addr(21,2)
   // Extracting the two LSB bits for finding out which GPIO pins to set
   val gpioPin = io.addr(1,0)
   // We have set the 128th memory row for gpio in pins. The data stored here will be for the gpio in pins.
@@ -212,8 +212,8 @@ class LoadStoreBusController extends Module {
       }
 
     }
-  } .elsewhen(address === 129.U) {
-    // The 129th row in memory is set for gpio pin out data
+  } .elsewhen(address === 256.U) {
+    // The 256th row in memory is set for gpio pin out data
     master.io.memRd := 0.U
     master.io.memWrt := 0.U
     master.io.addr_in := 0.U
