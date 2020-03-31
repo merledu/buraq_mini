@@ -192,7 +192,6 @@ class Core(enabel_M : UInt = 1.U) extends Module {
     decode.io.wb_regwrite      := MEM_WB.io.ctrl_RegWr_out
 
 
-
     // *********** ----------- EXECUTION (EX) STAGE ----------- ********* //
     execute.io.ID_EX_pc_out  := ID_EX.io.pc_out
     execute.io.EX_MEM_rd_sel := EX_MEM.io.rd_sel_out
