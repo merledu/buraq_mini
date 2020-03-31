@@ -13,6 +13,7 @@ class DataMem extends Module {
     })
 
     val mem = Mem(268435456, SInt(32.W))
+
     when(io.enable === 1.U) {
         // Store
         mem.write(io.memAddress, io.memData)
