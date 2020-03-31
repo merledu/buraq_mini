@@ -2,16 +2,18 @@ package core
 
 import chisel3._
 import chisel3.util.Cat
-
+import chisel3.util._
+import common._
 class Alu extends Module {
     val io = IO(new Bundle {
         val oper_a = Input(SInt(32.W))
         val oper_b = Input(SInt(32.W))
         val aluCtrl = Input(UInt(5.W))
         val output = Output(SInt(32.W))
-        val branch = Output(UInt(1.W))
+      //  val branch = Output(UInt(1.W))
     })
     
+
     when(io.aluCtrl === "b00000".U) {
         // ADD
         io.output := io.oper_a + io.oper_b
@@ -138,10 +140,6 @@ class Alu extends Module {
         io.output := DontCare
     }
 
-    when(io.aluCtrl(4,3) === "b10".U && io.output === 1.S) {
-        io.branch := 1.U
-    } .otherwise {
-        io.branch := 0.U
-    }
+  
 
 }
