@@ -19,6 +19,10 @@ class Decode extends Module {
     val dmem_memOut = Input(SInt(32.W))
     val writeback_write_data = Input(SInt(32.W))
 
+    val execute_regwrite = Input(UInt(1.W))
+    val mem_regwrite     = Input(UInt(1.W))
+    val wb_regwrite      = Input(UInt(1.W))
+
     val stall = Input(UInt(1.W))
 
     val pc_out = Output(SInt(32.W))
@@ -91,6 +95,10 @@ class Decode extends Module {
   decodeForwardUnit.io.rs1_sel := io.IF_ID_inst(19, 15)
   decodeForwardUnit.io.rs2_sel := io.IF_ID_inst(24, 20)
   decodeForwardUnit.io.ctrl_branch := control.io.out_branch
+
+  decodeForwardUnit.io.execute_regwrite := io.execute_regwrite
+  decodeForwardUnit.io.mem_regwrite := io.mem_regwrite 
+  decodeForwardUnit.io.wb_regwrite := io.wb_regwrite 
 
   branchLogic.io.in_func3 := io.IF_ID_inst(14,12)
 
