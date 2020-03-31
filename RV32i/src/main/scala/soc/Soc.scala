@@ -19,7 +19,7 @@ class Soc extends Module {
 //    val inst_out = Output(UInt(32.W))
   })
 
-  val core = Module(new Core)
+  val core = Module(new Core(1.U))
   val iccmController = Module(new ICCMController)
   val dccmController = Module(new DCCMController)
   val uartController = Module(new UartController(10000,3000))

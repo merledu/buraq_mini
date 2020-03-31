@@ -12,7 +12,9 @@ class DataMem extends Module {
             val memOut = Output(SInt(32.W))  
     })
 
-    val mem = Mem(1048576, SInt(32.W))
+
+    val mem = Mem(268435456, SInt(32.W))
+
     when(io.enable === 1.U) {
         // Store
         mem.write(io.memAddress, io.memData)

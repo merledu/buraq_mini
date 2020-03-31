@@ -2,16 +2,18 @@ package core
 
 import chisel3._
 import chisel3.util.Cat
-
+import chisel3.util._
+import common._
 class Alu extends Module {
     val io = IO(new Bundle {
         val oper_a = Input(SInt(32.W))
         val oper_b = Input(SInt(32.W))
         val aluCtrl = Input(UInt(5.W))
         val output = Output(SInt(32.W))
-        val branch = Output(UInt(1.W))
+      //  val branch = Output(UInt(1.W))
     })
     
+
     when(io.aluCtrl === "b00000".U) {
         // ADD
         io.output := io.oper_a + io.oper_b
@@ -94,15 +96,50 @@ class Alu extends Module {
         // JALR/JAL
         io.output := io.oper_a
     }
-    
+    .elsewhen(io.aluCtrl === 11.U)
+    {
+        io.output := io.oper_b
+    }
+    // M extension
+    .elsewhen(io.aluCtrl === 30.U)
+    {
+        io.output := io.oper_a * io.oper_b // MUL
+    }
+    .elsewhen(io.aluCtrl === 29.U)
+    {
+        io.output := io.oper_a / io.oper_b // DIV
+    }
+    .elsewhen(io.aluCtrl === 27.U)
+    {
+        io.output := ((io.oper_a.asUInt) / (io.oper_b.asUInt)).asSInt // DIVU
+    }
+    .elsewhen(io.aluCtrl === 26.U)
+    {
+        io.output := io.oper_a % io.oper_b // REM
+    }
+    .elsewhen(io.aluCtrl === 25.U)
+    {
+        io.output := ((io.oper_a.asUInt) % (io.oper_b.asUInt)).asSInt // REMU
+    }
+    .elsewhen(io.aluCtrl === 24.U)
+    {
+        val result_in_64bits_MULH = io.oper_a * io.oper_b // MULH
+        io.output := result_in_64bits_MULH(63,32).asSInt
+    }
+    .elsewhen(io.aluCtrl === 19.U)
+    {
+        val result_in_64bits_MULHSU = io.oper_a * io.oper_b.asUInt // MULHSU
+        io.output := result_in_64bits_MULHSU(63,32).asSInt
+    }
+    .elsewhen(io.aluCtrl === 18.U)
+    {
+        val result_in_64bits_MULHU = io.oper_a.asUInt * io.oper_b.asUInt // MULHU
+        io.output := result_in_64bits_MULHU(63,32).asSInt
+    }
     .otherwise {
         io.output := DontCare
     }
 
-    when(io.aluCtrl(4,3) === "b10".U && io.output === 1.S) {
-        io.branch := 1.U
-    } .otherwise {
-        io.branch := 0.U
-    }
+  
 
 }

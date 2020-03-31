@@ -2,7 +2,7 @@ package core
 
 import chisel3._
 
-class Core extends Module {
+class Core(enabel_M : UInt = 1.U) extends Module {
     val io = IO(new Bundle {
         // Channel D wires coming from the ICCM Controller's slave interface outside the core.
         val iccm_d_opcode = Input(UInt(3.W))
@@ -50,7 +50,7 @@ class Core extends Module {
          * The stall pin output coming from the FetchBusController going out from the core for UART Controller
          * as well as for ICCM Controller*/
         val isStalled = Output(Bool())
-
+        
         val reg_7 = Output(SInt(32.W))
         val reg_out = Output(SInt(32.W))
  })
@@ -160,6 +160,8 @@ class Core extends Module {
 //    decode.io.dmem_memOut := io.dmem_data
     decode.io.dmem_memOut := loadStoreBusController.io.data.asSInt
     decode.io.stall := staller.io.stall
+    val M_extension_parameter = enabel_M
+    decode.io.enable_M_extension := M_extension_parameter
 
     ID_EX.io.stall := staller.io.stall
     ID_EX.io.ctrl_MemWr_in := decode.io.ctrl_MemWr_out
@@ -171,6 +173,7 @@ class Core extends Module {
     ID_EX.io.ctrl_OpA_sel_in := decode.io.ctrl_OpA_sel_out
     ID_EX.io.ctrl_OpB_sel_in := decode.io.ctrl_OpB_sel_out
     ID_EX.io.ctrl_nextPc_sel_in := decode.io.ctrl_next_pc_sel_out
+    ID_EX.io.M_extension_enabled_in := decode.io.M_extension_enabled
 
     ID_EX.io.rs1_in := decode.io.rs1_out
     ID_EX.io.rs2_in := decode.io.rs2_out
@@ -187,6 +190,8 @@ class Core extends Module {
     decode.io.execute_regwrite := ID_EX.io.ctrl_RegWr_out
     decode.io.mem_regwrite     := EX_MEM.io.ctrl_RegWr_out
     decode.io.wb_regwrite      := MEM_WB.io.ctrl_RegWr_out
+
+
 
 
     // *********** ----------- EXECUTION (EX) STAGE ----------- ********* //
@@ -213,6 +218,7 @@ class Core extends Module {
     execute.io.ID_EX_ctrl_MemRd := ID_EX.io.ctrl_MemRd_out
     execute.io.ID_EX_ctrl_RegWr := ID_EX.io.ctrl_RegWr_out
     execute.io.ID_EX_ctrl_MemToReg := ID_EX.io.ctrl_MemToReg_out
+    execute.io.M_extension_enabled := ID_EX.io.M_extension_enabled
 
     EX_MEM.io.stall := staller.io.stall
     // Passing the ALU output to the EX/MEM pipeline register

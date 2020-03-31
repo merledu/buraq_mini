@@ -5,16 +5,19 @@ import chisel3._
 class Control extends Module {
     val io = IO(new Bundle {
         val in_opcode = Input(UInt(7.W))
+        val func7     = Input(UInt(7.W))
+        val enable_M_extension = Input(UInt(1.W))
         val out_memWrite = Output(UInt(1.W))
         val out_branch = Output(UInt(1.W))
         val out_memRead = Output(UInt(1.W))
         val out_regWrite = Output(UInt(1.W))
         val out_memToReg = Output(UInt(1.W))
-        val out_aluOp = Output(UInt(3.W))
+        val out_aluOp = Output(UInt(4.W))
         val out_operand_a_sel = Output(UInt(2.W))
         val out_operand_b_sel = Output(UInt(1.W))
         val out_extend_sel = Output(UInt(2.W))
         val out_next_pc_sel = Output(UInt(2.W))
+        val M_extension_enabled = Output(UInt(1.W))
     })
     val instruction_type_decode = Module(new InstructionTypeDecode())
     val control_decode = Module(new ControlDecode())
@@ -27,6 +30,9 @@ class Control extends Module {
     control_decode.io.in_jalr_type := instruction_type_decode.io.jalr_type
     control_decode.io.in_jal_type := instruction_type_decode.io.jal_type
     control_decode.io.in_lui_type := instruction_type_decode.io.lui_type
+    control_decode.io.Auipc       := instruction_type_decode.io.Auipc
+    control_decode.io.multiply    := instruction_type_decode.io.multiply
+
     
     io.out_memWrite := control_decode.io.memWrite
     io.out_branch := control_decode.io.branch
@@ -38,4 +44,8 @@ class Control extends Module {
     io.out_operand_b_sel := control_decode.io.operand_b_sel
     io.out_extend_sel := control_decode.io.extend_sel
     io.out_next_pc_sel := control_decode.io.next_pc_sel
+    instruction_type_decode.io.enable_M_extension := io.enable_M_extension 
+    io.M_extension_enabled := control_decode.io.M_extension_enabled 
+
+    instruction_type_decode.io.func7 := io.func7
 }
