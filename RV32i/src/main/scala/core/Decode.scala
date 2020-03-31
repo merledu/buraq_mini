@@ -4,6 +4,7 @@ import chisel3._
 
 class Decode extends Module {
   val io = IO(new Bundle {
+    val enable_M_extension = Input(UInt(1.W))
     val IF_ID_inst = Input(UInt(32.W))
     val IF_ID_pc = Input(SInt(32.W))
     val IF_ID_pc4 = Input(SInt(32.W))
@@ -19,13 +20,17 @@ class Decode extends Module {
     val dmem_memOut = Input(SInt(32.W))
     val writeback_write_data = Input(SInt(32.W))
 
+    val execute_regwrite = Input(UInt(1.W))
+    val mem_regwrite     = Input(UInt(1.W))
+    val wb_regwrite      = Input(UInt(1.W))
+
     val stall = Input(UInt(1.W))
 
     val pc_out = Output(SInt(32.W))
     val pc4_out = Output(SInt(32.W))
     val inst_out = Output(UInt(32.W))
     val func3_out = Output(UInt(3.W))
-    val func7_out = Output(UInt(1.W))
+    val func7_out = Output(UInt(7.W))
     val rd_sel_out = Output(UInt(5.W))
     val rs1_sel_out = Output(UInt(5.W))
     val rs2_sel_out = Output(UInt(5.W))
@@ -46,11 +51,12 @@ class Decode extends Module {
     val ctrl_Branch_out = Output(UInt(1.W))
     val ctrl_RegWr_out = Output(UInt(1.W))
     val ctrl_MemToReg_out = Output(UInt(1.W))
-    val ctrl_AluOp_out = Output(UInt(3.W))
+    val ctrl_AluOp_out = Output(UInt(4.W))
     val ctrl_OpA_sel_out = Output(UInt(2.W))
     val ctrl_OpB_sel_out = Output(UInt(1.W))
     val ctrl_next_pc_sel_out = Output(UInt(2.W))
     val reg_7_out = Output(SInt(32.W))
+    val M_extension_enabled = Output(UInt(1.W))
   })
 
   val hazardDetection = Module(new HazardDetection())
@@ -80,6 +86,8 @@ class Decode extends Module {
 
   // Initialize Control Unit
   control.io.in_opcode := io.IF_ID_inst(6, 0)
+  control.io.enable_M_extension := io.enable_M_extension // M extension
+  control.io.func7      := io.IF_ID_inst(31,25)
 
   // Initialize Decode Forward Unit
   decodeForwardUnit.io.ID_EX_REGRD := io.ID_EX_rd_sel
@@ -91,6 +99,10 @@ class Decode extends Module {
   decodeForwardUnit.io.rs1_sel := io.IF_ID_inst(19, 15)
   decodeForwardUnit.io.rs2_sel := io.IF_ID_inst(24, 20)
   decodeForwardUnit.io.ctrl_branch := control.io.out_branch
+
+  decodeForwardUnit.io.execute_regwrite := io.execute_regwrite
+  decodeForwardUnit.io.mem_regwrite := io.mem_regwrite 
+  decodeForwardUnit.io.wb_regwrite := io.wb_regwrite 
 
   branchLogic.io.in_func3 := io.IF_ID_inst(14,12)
 
@@ -251,7 +263,7 @@ class Decode extends Module {
   io.pc4_out := io.IF_ID_pc4
   io.inst_out := io.IF_ID_inst
   io.func3_out := io.IF_ID_inst(14,12)
-  io.func7_out := io.IF_ID_inst(30)
+  io.func7_out := io.IF_ID_inst(31,25)
   io.rd_sel_out := io.IF_ID_inst(11,7)
   io.rs1_sel_out := io.IF_ID_inst(19,15)
   io.rs2_sel_out := io.IF_ID_inst(24,20)
@@ -266,6 +278,7 @@ class Decode extends Module {
     io.ctrl_OpA_sel_out := 0.U
     io.ctrl_OpB_sel_out := 0.U
     io.ctrl_next_pc_sel_out := 0.U
+    io.M_extension_enabled := 0.U
   }
 
   def sendDefaultControlPins() : Unit = {
@@ -278,6 +291,7 @@ class Decode extends Module {
     io.ctrl_OpA_sel_out := control.io.out_operand_a_sel
     io.ctrl_OpB_sel_out := control.io.out_operand_b_sel
     io.ctrl_next_pc_sel_out := control.io.out_next_pc_sel
+    io.M_extension_enabled := control.io.M_extension_enabled
   }
 
   io.reg_7_out := reg_file.io.reg_7

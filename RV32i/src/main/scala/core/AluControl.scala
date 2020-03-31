@@ -1,44 +1,45 @@
 package core
 
 import chisel3._
+import chisel3.util._
 import chisel3.util.Cat
+import common._
 
 class AluControl extends Module {
     val io = IO(new Bundle {
-        val aluOp = Input(UInt(3.W))
-        val func7 = Input(UInt(1.W))
+        val M_extension = Input(UInt(1.W))
+        val aluOp = Input(UInt(4.W))
+        val func7 = Input(UInt(7.W))
         val func3 = Input(UInt(3.W))
         val output = Output(UInt(5.W))        
     })
+
+    val AluOP = new ALU_operations_Sel(io.M_extension, io.func3, io.func7, io.aluOp)
     
-    when(io.aluOp === "b000".U){
-        // R-Type Instruction
-        io.output := Cat("b0".U, io.func7, io.func3)
-    } .elsewhen(io.aluOp === "b100".U) {
-        // Load Type Instruction
-        io.output := "b00000".U
-    } .elsewhen(io.aluOp === "b001".U) {
-        // I-Type Instruction
-        when(io.func3 === "b101".U) {
-            io.output := Cat("b0".U, io.func7, io.func3)
-        } .otherwise {
-            io.output := Cat("b0".U, "b0".U, io.func3)
-        }
-        //
-    } .elsewhen(io.aluOp === "b101".U) {
-        // S-Type Instruction
-        io.output := "b00000".U
-    } .elsewhen(io.aluOp === "b010".U) {
-        // SB-Type Instruction
-        io.output := Cat("b10".U, io.func3)
-    } .elsewhen(io.aluOp === "b011".U) {
-        // JALR instruction // JAL instruction
-        io.output := "b11111".U
-    } .elsewhen(io.aluOp === "b110".U) {
-        // LUI type instruction
-        io.output := "b00000".U
-    } .otherwise {
-        io.output := DontCare
-    }
+    when(AluOP.ADD || AluOP.ADDI || AluOP.SW || AluOP.SB || AluOP.SH || AluOP.LW || AluOP.LB || AluOP.LH || AluOP.LBU || AluOP.LHU || AluOP.LWU || AluOP.LUI || AluOP.AUIPC) 
+    { io.output := 0.U}
+    .elsewhen(AluOP.SLL || AluOP.SLLI) { io.output := 1.U}
+    .elsewhen(AluOP.SLT || AluOP.SLTI) { io.output := 2.U}
+    .elsewhen(AluOP.SLTU|| AluOP.SLTIU || AluOP.BLTU) { io.output := 3.U}
+    .elsewhen(AluOP.XOR || AluOP.XORI) { io.output := 4.U}
+    .elsewhen(AluOP.SRL || AluOP.SRLI || AluOP.SRA || AluOP.SRAI) { io.output := 5.U}
+    .elsewhen(AluOP.OR  || AluOP.ORI)  { io.output := 6.U}
+    .elsewhen(AluOP.AND || AluOP.ANDI) { io.output := 7.U}
+    .elsewhen(AluOP.SUB) { io.output := 8.U}
+    .elsewhen(AluOP.BEQ) { io.output := 16.U}
+    .elsewhen(AluOP.BNE) { io.output := 17.U}
+    .elsewhen(AluOP.BLT) { io.output := 20.U}
+    .elsewhen(AluOP.BGE) { io.output := 21.U}
+    .elsewhen(AluOP.BGEU){ io.output := 23.U}
+    .elsewhen(AluOP.JAL || AluOP.JALR) { io.output := 31.U}
+    .elsewhen(AluOP.MUL) { io.output := 30.U}
+    .elsewhen(AluOP.DIV) { io.output := 29.U}
+    .elsewhen(AluOP.DIVU){ io.output := 27.U}
+    .elsewhen(AluOP.REM) { io.output := 26.U}
+    .elsewhen(AluOP.REMU){ io.output := 25.U}
+    .elsewhen(AluOP.MULH){ io.output := 24.U}
+    .elsewhen(AluOP.MULHSU) { io.output := 19.U}
+    .elsewhen(AluOP.MULHU) { io.output := 18.U}
+    .otherwise { io.output := DontCare}
 
 }
