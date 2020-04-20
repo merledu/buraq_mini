@@ -1,6 +1,6 @@
 package merl.uit.tilelink
 import chisel3._
-
+// This is the Channel D properties that every Slave Interface has to adhere to
 trait ChannelD {
 
   var d_opcode: UInt

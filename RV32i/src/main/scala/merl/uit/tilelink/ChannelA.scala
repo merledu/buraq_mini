@@ -1,6 +1,7 @@
 package merl.uit.tilelink
 import chisel3._
 
+// This is the channel A properties that every Master interface has to adhere to
 trait ChannelA {
   var a_opcode: UInt
   val a_param: UInt = 0.U(3.W)
@@ -17,16 +18,5 @@ trait ChannelA {
   var a_ready: Bool
   // the sender of a beat raises the channel valid signal to offer the availability of the beat on the channel.
   var a_valid: Bool
-
-//  def sendGetRequest(a_addr: UInt) = {
-//    a_opcode = 4.U
-//    a_address = a_addr
-//    a_ready = true
-//    a_valid = true
-//    val chnlD = new ChannelD
-//    chnlD.setDReady
-//    chnlD.parseGetFromChannelA(a_opcode, a_address, a_valid)
-//
-//  }
 
 }
