@@ -13,16 +13,17 @@ class ID_EX extends Module {
         val imm = Input(SInt(32.W))
         val rd_sel_in = Input(UInt(5.W))
         val func3_in = Input(UInt(3.W))
-        val func7_in = Input(UInt(1.W))
+        val func7_in = Input(UInt(7.W))
         val ctrl_MemWr_in = Input(UInt(1.W))
         val ctrl_MemRd_in = Input(UInt(1.W))
         val ctrl_Branch_in = Input(UInt(1.W))
         val ctrl_RegWr_in = Input(UInt(1.W))
         val ctrl_MemToReg_in = Input(UInt(1.W))
-        val ctrl_AluOp_in = Input(UInt(3.W))
+        val ctrl_AluOp_in = Input(UInt(4.W))
         val ctrl_OpA_sel_in = Input(UInt(2.W))
         val ctrl_OpB_sel_in = Input(UInt(1.W))
         val ctrl_nextPc_sel_in = Input(UInt(2.W))
+        val M_extension_enabled_in = Input(UInt(1.W))
 
         val stall = Input(UInt(1.W))
 
@@ -32,7 +33,7 @@ class ID_EX extends Module {
         val rs2_out = Output(SInt(32.W))
         val imm_out = Output(SInt(32.W))
         val func3_out = Output(UInt(3.W))
-        val func7_out = Output(UInt(1.W))
+        val func7_out = Output(UInt(7.W))
         val rd_sel_out = Output(UInt(5.W))
         val rs1_sel_out = Output(UInt(5.W))
         val rs2_sel_out = Output(UInt(5.W))
@@ -41,10 +42,11 @@ class ID_EX extends Module {
         val ctrl_Branch_out = Output(UInt(1.W))
         val ctrl_RegWr_out = Output(UInt(1.W))
         val ctrl_MemToReg_out = Output(UInt(1.W))
-        val ctrl_AluOp_out = Output(UInt(3.W))
+        val ctrl_AluOp_out = Output(UInt(4.W))
         val ctrl_OpA_sel_out = Output(UInt(2.W))
         val ctrl_OpB_sel_out = Output(UInt(1.W))
         val ctrl_nextPc_sel_out = Output(UInt(2.W))
+        val M_extension_enabled = Output(UInt(1.W))
     })
     val pc_reg = RegInit(0.S(32.W))
     val pc4_reg = RegInit(0.S(32.W))
@@ -55,17 +57,19 @@ class ID_EX extends Module {
     val rs1_sel_reg = RegInit(0.U(5.W))
     val rs2_sel_reg = RegInit(0.U(5.W))
     val func3_reg = RegInit(0.U(3.W))
-    val func7_reg = RegInit(0.U(1.W))
+    val func7_reg = RegInit(0.U(7.W))
+    
 
     val ctrl_MemWr_reg = RegInit(0.U(1.W))
     val ctrl_MemRd_reg = RegInit(0.U(1.W))
     val ctrl_Branch_reg = RegInit(0.U(1.W))
     val ctrl_RegWr_reg = RegInit(0.U(1.W))
     val ctrl_MemToReg_reg = RegInit(0.U(1.W))
-    val ctrl_AluOp_reg = RegInit(0.U(3.W))
+    val ctrl_AluOp_reg = RegInit(0.U(4.W))
     val ctrl_OpA_sel_reg = RegInit(0.U(2.W))
     val ctrl_OpB_sel_reg = RegInit(0.U(1.W))
     val ctrl_nextPc_sel_reg = RegInit(0.U(1.W))
+    val M_extension_reg     = RegInit(0.U(1.W))
 
     when(io.stall =/= 1.U) {
         pc_reg := io.pc_in
@@ -88,6 +92,8 @@ class ID_EX extends Module {
         ctrl_OpA_sel_reg := io.ctrl_OpA_sel_in
         ctrl_OpB_sel_reg := io.ctrl_OpB_sel_in
         ctrl_nextPc_sel_reg := io.ctrl_nextPc_sel_in
+        M_extension_reg := io.M_extension_enabled_in
+
 
         io.pc_out := pc_reg
         io.pc4_out := pc4_reg
@@ -109,6 +115,8 @@ class ID_EX extends Module {
         io.ctrl_OpA_sel_out := ctrl_OpA_sel_reg
         io.ctrl_OpB_sel_out := ctrl_OpB_sel_reg
         io.ctrl_nextPc_sel_out := ctrl_nextPc_sel_reg
+         io.M_extension_enabled := M_extension_reg
+        
     } .otherwise {
         io.pc_out := pc_reg
         io.pc4_out := pc4_reg
@@ -130,6 +138,7 @@ class ID_EX extends Module {
         io.ctrl_OpA_sel_out := ctrl_OpA_sel_reg
         io.ctrl_OpB_sel_out := ctrl_OpB_sel_reg
         io.ctrl_nextPc_sel_out := ctrl_nextPc_sel_reg
+         io.M_extension_enabled := M_extension_reg
     }
 
 }

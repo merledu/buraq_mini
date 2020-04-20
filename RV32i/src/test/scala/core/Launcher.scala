@@ -47,7 +47,7 @@ object Launcher {
         }
       },
       "Core" -> { (manager: TesterOptionsManager) =>
-        Driver.execute(() => new Core(), manager) {
+        Driver.execute(() => new Core(1.U), manager) {
           (c) => new CoreTests(c)
         }
       },
