@@ -9,13 +9,13 @@ import merl.uit.tilelink.SlaveInterface
  * and Channel D outputs going into the master interface of FetchBusController.
  */
 class FetchSlaveIO extends Bundle {
-  // Channel A
+  // Channel A input wires coming from the FetchBusController inside the core
   val a_address = Input(UInt(32.W))
   val a_data = Input(UInt(32.W))
   val a_opcode = Input(UInt(3.W))
   val a_source = Input(UInt(32.W))
   val a_valid = Input(Bool())
-  // Channel D
+  // Channel D output wires going to the FetchBusController inside the core
   val d_opcode = Output(UInt(3.W))
   val d_source = Output(UInt(32.W))
   val d_denied = Output(Bool())
@@ -46,7 +46,7 @@ class UARTSlaveIO extends Bundle {
 }
 
 class ICCMControllerIO extends Bundle {
-  // The data returned from the calling module in case of a GET request.
+  // The data coming from the instruction memory which will then be forwarded to the slave interface
   val ackDataFromModule = Input(UInt(32.W))
 
   val fetchSlaveIO = new FetchSlaveIO()
@@ -61,14 +61,17 @@ class ICCMControllerIO extends Bundle {
 
 class ICCMController extends Module {
   val io = IO(new ICCMControllerIO)
-
+  // the slave interface that is used for dealing with fetch related queries
   val si1 = Module(new SlaveInterface(forFetch = true))
+  // wiring the data received from the instruction memory to the slave interface
   si1.io.ackDataFromModule := io.ackDataFromModule
+  // wiring the channel A wires to the slave interface coming from the FetchBusController inside the core
   si1.io.a_address := io.fetchSlaveIO.a_address
   si1.io.a_data := io.fetchSlaveIO.a_data
   si1.io.a_opcode := io.fetchSlaveIO.a_opcode
   si1.io.a_source := io.fetchSlaveIO.a_source
   si1.io.a_valid := io.fetchSlaveIO.a_valid
+  // wiring the channel D wires to the output of this module to be used by the FetchBusController
   io.fetchSlaveIO.d_opcode := si1.io.d_opcode
   io.fetchSlaveIO.d_source := si1.io.d_source
   io.fetchSlaveIO.d_denied := si1.io.d_denied
@@ -107,7 +110,7 @@ class ICCMController extends Module {
   } .otherwise {
     // FETCH SCENARIO
     /**
-     * In this case UART_EN will be false. The UART_EN get's false when it does not want to write
+     * In this case UART_EN will be false. The UART_EN gets false when it does not want to write
      * garbage value to the memory, that does not necessarily mean that the uart has finished doing
      * it's work. It might have to make UART_EN high when it samples the data and want's to write
      * to the memory again. In this case we will be in the FETCH SCENARIO even when the uart has not

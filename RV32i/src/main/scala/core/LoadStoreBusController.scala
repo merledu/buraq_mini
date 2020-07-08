@@ -35,7 +35,7 @@ class LoadStoreBusControllerIO extends Bundle {
   val d_valid = Input(Bool())
   val d_data = Input(UInt(32.W))
 
-  // The resultant output of the module.
+  // The data received by Agent through master interface which is then provided to the core
   val data = Output(UInt(32.W))
 
   // The GPIO control signals setting the control of gpio controller, indicating what tasks need to be done
@@ -55,8 +55,8 @@ class LoadStoreBusController extends Module {
   val address = io.addr(21,2)
   // Extracting the two LSB bits for finding out which GPIO pins to set
   val gpioPin = io.addr(1,0)
-  // We have set the 128th memory row for gpio in pins. The data stored here will be for the gpio in pins.
-  when(address === 128.U) {     // GPIO in pins address map in memory
+  // We have set the 128th memory row for gpio input pins. The data stored here will be for the gpio in pins.
+  when(address === 128.U) {     // GPIO input pins address map in memory
     // Setting the default values for tilelink master interface
     master.io.memRd := 0.U
     master.io.memWrt := 0.U
@@ -213,7 +213,7 @@ class LoadStoreBusController extends Module {
 
     }
   } .elsewhen(address === 256.U) {
-    // The 256th row in memory is set for gpio pin out data
+    // The 256th row in memory is set for gpio output pins data
     master.io.memRd := 0.U
     master.io.memWrt := 0.U
     master.io.addr_in := 0.U
@@ -322,38 +322,60 @@ class LoadStoreBusController extends Module {
         // This is for normal load and stores instruction
         val load = Module(new Load_unit())
         val store= Module(new Store_unit())
+
+        // Setting the stall output wire to 0 since we do not need to stall for simple load/stores
         io.stallForMMIO := 0.U
+        // Setting readGPIO output wire to 0 since we do not need to read values from the GPIO Controller
         io.readGPIO := 0.U
+        // Setting the setGPIO output wire to 0 since we do not need to set any values on the output pins of the GPIO
         io.setGPIO := 0.U
 
           master.io.memRd := io.isLoad
           master.io.memWrt := io.isStore
           master.io.addr_in := address
-          // store unit 
+
+          // Store module is a unit that is used for slicing the data if we want to store either
+          // sb (store byte)
+          // sh (store halfword)
+          // sw (store word)
           store.io.MemWrite := io.isStore
           store.io.func3    := io.func3
           store.io.Rs2      := io.rs2
-         // master.io.data_in := io.rs2
+         
+         // providing the master interface with the appropriate data from the store module
+         // which will then be sent over the bus to be stored in the data memory
           master.io.data_in := store.io.StoreData
 
+        // Setting the output wires according to the Channel A properties of the master interface
         io.a_address := master.io.a_address
         io.a_data := master.io.a_data
         io.a_opcode := master.io.a_opcode
         io.a_source := master.io.a_source
         io.a_valid := master.io.a_valid
 
+        /** Setting the Channel D properties of the master interface 
+          * from the wires coming from the DCCM Controller's slave interface
+        */
         master.io.d_valid := io.d_valid
         master.io.d_source := io.d_source
         master.io.d_opcode := io.d_opcode
         master.io.d_denied := io.d_denied
         master.io.d_data := io.d_data
-        // load unit
-
+        
+        // Load module is a unit used for slicing that data coming from the data memory to be read by the core
+        // lb (load byte)
+        // lbu (load byte unsigned)
+        // lh (load halfword)
+        // lhu (load halfword unsigned)
+        // lw (load word)
+        // lwu (load word unsigned)
         load.io.MemRead  := io.isLoad
         load.io.func3    := io.func3
+        // the data received by the master interface from channel D of DCCM Controller's slave interface
+        // is fed into the load unit to slice the appropriate data that is needed by the core
         load.io.MemData  := master.io.data
        
-       // io.data := master.io.data
+        // the data is then attached to the output from the load unit which is then read by the core
         io.data  := load.io.LoadData
         io.setGPIOData := 0.U
       }
