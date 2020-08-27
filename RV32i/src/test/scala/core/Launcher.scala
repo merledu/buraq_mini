@@ -2,12 +2,12 @@
 package core
 
 import chisel3.iotesters.{Driver, TesterOptionsManager}
-import merl.uit.tilelink.{MasterInterface, SlaveInterface}
+//import merl.uit.tilelink.{MasterInterface, SlaveInterface}
 import utils.TutorialRunner
 import chisel3._
-import peripherals.{GPIOController, UartController}
-import soc.{DCCMController, DataMem, ICCMController, InstructionMem, Soc}
-import uart_testbench.Top
+//import peripherals.{GPIOController, UartController}
+//import soc.{DCCMController, DataMem, ICCMController, InstructionMem, Soc}
+//import uart_testbench.Top
 
 object Launcher {
   val examples = Map(
@@ -56,19 +56,9 @@ object Launcher {
           (c) => new PcTests(c)
         }
       },
-      "InstructionMem" -> { (manager: TesterOptionsManager) =>
-        Driver.execute(() => new InstructionMem(), manager) {
-          (c) => new InstructionMemTests(c)
-        }
-      },
       "Jalr" -> { (manager: TesterOptionsManager) =>
         Driver.execute(() => new Jalr(), manager) {
           (c) => new JalrTests(c)
-        }
-      },
-      "DataMem" -> { (manager: TesterOptionsManager) =>
-        Driver.execute(() => new DataMem(), manager) {
-          (c) => new DataMemTests(c)
         }
       },
       "IF_ID" -> { (manager: TesterOptionsManager) =>
@@ -161,49 +151,9 @@ object Launcher {
           (c) => new Load_unitTests(c)
         }
       },
-      "MasterInterface" -> { (manager: TesterOptionsManager) =>
-        Driver.execute(() => new MasterInterface(1.U, false), manager) {
-          (c) => new MasterInterfaceTests(c)
-        }
-      },
-      "SlaveInterface" -> { (manager: TesterOptionsManager) =>
-        Driver.execute(() => new SlaveInterface(forFetch = true), manager) {
-          (c) => new SlaveInterfaceTests(c)
-        }
-      },
-      "ICCMController" -> { (manager: TesterOptionsManager) =>
-        Driver.execute(() => new ICCMController(), manager) {
-          (c) => new ICCMControllerTests(c)
-        }
-      },
       "FetchBusController" -> { (manager: TesterOptionsManager) =>
         Driver.execute(() => new FetchBusController(), manager) {
           (c) => new FetchBusControllerTests(c)
-        }
-      },
-      "Soc" -> { (manager: TesterOptionsManager) =>
-        Driver.execute(() => new Soc(), manager) {
-          (c) => new SocTests(c, "/Users/mbp/Desktop/instructions.txt")
-        }
-      },
-      "DCCMController" -> { (manager: TesterOptionsManager) =>
-        Driver.execute(() => new DCCMController(), manager) {
-          (c) => new DCCMControllerTests(c)
-        }
-      },
-      "GPIOController" -> { (manager: TesterOptionsManager) =>
-        Driver.execute(() => new GPIOController(), manager) {
-          (c) => new GPIOControllerTests(c)
-        }
-      },
-      "UartController" -> { (manager: TesterOptionsManager) =>
-        Driver.execute(() => new UartController(50000000, 115200), manager) {
-          (c) => new UartControllerTests(c)
-        }
-      },
-      "Top" -> { (manager: TesterOptionsManager) =>
-        Driver.execute(() => new Top(), manager) {
-          (c) => new TopTests(c)
         }
       }
   )
