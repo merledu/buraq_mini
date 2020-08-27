@@ -58,5 +58,5 @@ bufferedSource.close
     poke(c.io.rxd, 1)
     step(2)
   }
-  step(900000)
+  step(500)
 }

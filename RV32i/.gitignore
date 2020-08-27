@@ -40,7 +40,3 @@ doc/chisel-tutorial.pdf
 doc/*.aux
 doc/*.log
 
-.metals/
-.bloop/
-.ammonite/
-project/metals.sbt
