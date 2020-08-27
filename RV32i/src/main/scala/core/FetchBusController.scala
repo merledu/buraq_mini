@@ -1,7 +1,7 @@
 package core
 
 import chisel3._
-import merl.uit.tilelink.MasterInterface
+//import merl.uit.tilelink.MasterInterface
 
 class FetchBusControllerIO extends Bundle {
   // PC input coming in from the fetch module in core.
@@ -77,7 +77,7 @@ class FetchBusController extends Module {
     io.inst := 0.U
     io.stall := 1.U
   }
-  
+
   // as soon as the UART writes the first instruction of the program into the memory our above
   // condition will fail i.e at PC 0 the data will not be 0 now but it will be the instruction
   // but right now we can't resume the core until the uart has written all the program instructions
