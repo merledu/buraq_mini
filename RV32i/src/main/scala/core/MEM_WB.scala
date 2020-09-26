@@ -11,7 +11,7 @@ class MEM_WB extends Module {
         val dmem_data_in = Input(SInt(32.W))
         val alu_in = Input(SInt(32.W))
 
-        val stall = Input(UInt(1.W))
+       // val stall = Input(UInt(1.W))
 
         val ctrl_RegWr_out = Output(UInt(1.W))
         val ctrl_MemToReg_out = Output(UInt(1.W))
@@ -33,7 +33,7 @@ class MEM_WB extends Module {
 
     val reg_alu_output = RegInit(0.S(32.W))
 
-    when(io.stall =/= 1.U) {
+  //  when(io.stall =/= 1.U) {
         reg_regWr := io.ctrl_RegWr_in
         reg_memToReg := io.ctrl_MemToReg_in
         reg_memRd := io.ctrl_MemRd_in
@@ -47,14 +47,14 @@ class MEM_WB extends Module {
         io.rd_sel_out := reg_rdSel
         io.dmem_data_out := reg_dataMem_data
         io.alu_output := reg_alu_output
-    } .otherwise {
+/*    } .otherwise {
         io.ctrl_MemToReg_out := reg_memToReg
         io.ctrl_RegWr_out := reg_regWr
         io.ctrl_MemRd_out := reg_memRd
         io.rd_sel_out := reg_rdSel
         io.dmem_data_out := reg_dataMem_data
         io.alu_output := reg_alu_output
-    }
+    } */
 
 
 }

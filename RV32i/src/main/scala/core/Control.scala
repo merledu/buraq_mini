@@ -6,7 +6,7 @@ class Control extends Module {
     val io = IO(new Bundle {
         val in_opcode = Input(UInt(7.W))
         val func7     = Input(UInt(7.W))
-        val enable_M_extension = Input(UInt(1.W))
+      //  val enable_M_extension = Input(UInt(1.W))
         val out_memWrite = Output(UInt(1.W))
         val out_branch = Output(UInt(1.W))
         val out_memRead = Output(UInt(1.W))
@@ -17,7 +17,7 @@ class Control extends Module {
         val out_operand_b_sel = Output(UInt(1.W))
         val out_extend_sel = Output(UInt(2.W))
         val out_next_pc_sel = Output(UInt(2.W))
-        val M_extension_enabled = Output(UInt(1.W))
+      //  val M_extension_enabled = Output(UInt(1.W))
     })
     val instruction_type_decode = Module(new InstructionTypeDecode())
     val control_decode = Module(new ControlDecode())
@@ -44,8 +44,8 @@ class Control extends Module {
     io.out_operand_b_sel := control_decode.io.operand_b_sel
     io.out_extend_sel := control_decode.io.extend_sel
     io.out_next_pc_sel := control_decode.io.next_pc_sel
-    instruction_type_decode.io.enable_M_extension := io.enable_M_extension 
-    io.M_extension_enabled := control_decode.io.M_extension_enabled 
+//    instruction_type_decode.io.enable_M_extension := io.enable_M_extension 
+ //   io.M_extension_enabled := control_decode.io.M_extension_enabled 
 
     instruction_type_decode.io.func7 := io.func7
 }

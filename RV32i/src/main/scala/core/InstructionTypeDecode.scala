@@ -4,7 +4,7 @@ import chisel3._
 
 class InstructionTypeDecode extends Module {
     val io = IO(new Bundle {
-        val enable_M_extension = Input(UInt(1.W))
+     //   val enable_M_extension = Input(UInt(1.W))
         val func7  = Input(UInt(7.W))
         val opcode = Input(UInt(7.W))
         val r_type = Output(UInt(1.W))
@@ -24,14 +24,14 @@ class InstructionTypeDecode extends Module {
     {
         when(io.func7 === "b000001".U)
         {
-            when(io.enable_M_extension === 1.U)
+          /* when(io.enable_M_extension === 1.U)
             {
                 io.multiply := 1.U
             }
             .otherwise
             {
                 io.multiply := 0.U
-            }
+            }*/
                 io.r_type   := 0.U
        }
       .otherwise

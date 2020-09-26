@@ -27,7 +27,7 @@ class Execute extends Module {
     val ID_EX_ctrl_MemRd = Input(UInt(1.W))
     val ID_EX_ctrl_RegWr = Input(UInt(1.W))
     val ID_EX_ctrl_MemToReg = Input(UInt(1.W))
-    val M_extension_enabled = Input(UInt(1.W))
+  //  val M_extension_enabled = Input(UInt(1.W))
 
 
     val rs2_out = Output(SInt(32.W))
@@ -108,7 +108,7 @@ class Execute extends Module {
   alu_control.io.aluOp := io.ID_EX_ctrl_AluOp
   alu_control.io.func7 := io.ID_EX_func7
   alu_control.io.func3 := io.ID_EX_func3
-  alu_control.io.M_extension := io.M_extension_enabled
+ // alu_control.io.M_extension := io.M_extension_enabled
 
   // Connecting ALU Control output to ALU input
   alu.io.aluCtrl := alu_control.io.output

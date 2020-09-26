@@ -7,7 +7,7 @@ class ControlTests(c: Control) extends PeekPokeTester(c) {
     step(1)
     expect(c.io.out_memWrite, 0)
     expect(c.io.out_branch, 0)
-    expect(c.io.out_memRead, 0)
+ //   expect(c.io.out_memRead, 0)
     expect(c.io.out_regWrite, 1)
     expect(c.io.out_memToReg, 0)
     expect(c.io.out_aluOp, 3)

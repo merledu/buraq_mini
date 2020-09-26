@@ -4,7 +4,7 @@ import chisel3._
 
 class Decode extends Module {
   val io = IO(new Bundle {
-    val enable_M_extension = Input(UInt(1.W))
+ //   val enable_M_extension = Input(UInt(1.W))
     val IF_ID_inst = Input(UInt(32.W))
     val IF_ID_pc = Input(SInt(32.W))
     val IF_ID_pc4 = Input(SInt(32.W))
@@ -24,7 +24,7 @@ class Decode extends Module {
     val mem_regwrite     = Input(UInt(1.W))
     val wb_regwrite      = Input(UInt(1.W))
 
-    val stall = Input(UInt(1.W))
+    //val stall = Input(UInt(1.W))
 
     val pc_out = Output(SInt(32.W))
     val pc4_out = Output(SInt(32.W))
@@ -56,7 +56,7 @@ class Decode extends Module {
     val ctrl_OpB_sel_out = Output(UInt(1.W))
     val ctrl_next_pc_sel_out = Output(UInt(2.W))
     val reg_7_out = Output(SInt(32.W))
-    val M_extension_enabled = Output(UInt(1.W))
+  //  val M_extension_enabled = Output(UInt(1.W))
   })
 
   val hazardDetection = Module(new HazardDetection())
@@ -67,6 +67,7 @@ class Decode extends Module {
   val imm_generation = Module(new ImmediateGeneration())
   val structuralDetector = Module(new StructuralDetector())
   val jalr = Module(new Jalr())
+
 
 
   // Initialize Hazard Detection unit
@@ -86,7 +87,7 @@ class Decode extends Module {
 
   // Initialize Control Unit
   control.io.in_opcode := io.IF_ID_inst(6, 0)
-  control.io.enable_M_extension := io.enable_M_extension // M extension
+ // control.io.enable_M_extension := io.enable_M_extension // M extension
   control.io.func7      := io.IF_ID_inst(31,25)
 
   // Initialize Decode Forward Unit
@@ -212,7 +213,7 @@ class Decode extends Module {
   reg_file.io.rs1_sel := io.IF_ID_inst(19, 15)
   reg_file.io.rs2_sel := io.IF_ID_inst(24, 20)
   reg_file.io.regWrite := io.MEM_WB_ctrl_regWr
-  reg_file.io.stall := io.stall
+//  reg_file.io.stall := io.stall
   reg_file.io.rd_sel := io.MEM_WB_rd_sel
   reg_file.io.writeData := io.writeback_write_data
   
@@ -278,7 +279,7 @@ class Decode extends Module {
     io.ctrl_OpA_sel_out := 0.U
     io.ctrl_OpB_sel_out := 0.U
     io.ctrl_next_pc_sel_out := 0.U
-    io.M_extension_enabled := 0.U
+ //   io.M_extension_enabled := 0.U
   }
 
   def sendDefaultControlPins() : Unit = {
@@ -291,7 +292,7 @@ class Decode extends Module {
     io.ctrl_OpA_sel_out := control.io.out_operand_a_sel
     io.ctrl_OpB_sel_out := control.io.out_operand_b_sel
     io.ctrl_next_pc_sel_out := control.io.out_next_pc_sel
-    io.M_extension_enabled := control.io.M_extension_enabled
+ //   io.M_extension_enabled := control.io.M_extension_enabled
   }
 
   io.reg_7_out := reg_file.io.reg_7

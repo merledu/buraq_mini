@@ -10,7 +10,7 @@ class RegisterFile extends Module {
         val rs2_sel = Input(UInt(5.W))
         val writeData = Input(SInt(32.W))
 
-        val stall = Input(UInt(1.W))
+      //  val stall = Input(UInt(1.W))
 
         val rs1 = Output(SInt(32.W))
         val rs2 = Output(SInt(32.W))
@@ -24,7 +24,7 @@ class RegisterFile extends Module {
     registers(0) := 0.S
     io.rs1 := registers(io.rs1_sel) 
     io.rs2 := registers(io.rs2_sel) 
-    when(io.regWrite === 1.U && io.stall =/= 1.U) {
+    when(io.regWrite === 1.U /*&& io.stall =/= 1.U*/) {
         when(io.rd_sel === "b00000".U) {
             registers(io.rd_sel) := 0.S    
         } .otherwise {
