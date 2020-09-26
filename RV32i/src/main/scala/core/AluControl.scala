@@ -7,14 +7,14 @@ import common._
 
 class AluControl extends Module {
     val io = IO(new Bundle {
-        val M_extension = Input(UInt(1.W))
+       // val M_extension = Input(UInt(1.W))
         val aluOp = Input(UInt(4.W))
         val func7 = Input(UInt(7.W))
         val func3 = Input(UInt(3.W))
         val output = Output(UInt(5.W))        
     })
 
-    val AluOP = new ALU_operations_Sel(io.M_extension, io.func3, io.func7, io.aluOp)
+    val AluOP = new ALU_operations_Sel( io.func3, io.func7, io.aluOp)
     
     when(AluOP.ADD || AluOP.ADDI || AluOP.SW || AluOP.SB || AluOP.SH || AluOP.LW || AluOP.LB || AluOP.LH || AluOP.LBU || AluOP.LHU || AluOP.LWU || AluOP.LUI || AluOP.AUIPC) 
     { io.output := 0.U}

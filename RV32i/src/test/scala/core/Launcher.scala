@@ -11,7 +11,8 @@ import chisel3._
 
 object Launcher {
   val examples = Map(
-      "AluControl" -> { (manager: TesterOptionsManager) =>
+   
+  "AluControl" -> { (manager: TesterOptionsManager) =>
         Driver.execute(() => new AluControl(), manager) {
           (c) => new AluControlTests(c)
         }
@@ -46,11 +47,6 @@ object Launcher {
           (c) => new RegisterFileTests(c)
         }
       },
-      "Core" -> { (manager: TesterOptionsManager) =>
-        Driver.execute(() => new Core(1.U), manager) {
-          (c) => new CoreTests(c)
-        }
-      },
       "Pc" -> { (manager: TesterOptionsManager) =>
         Driver.execute(() => new Pc(), manager) {
           (c) => new PcTests(c)
@@ -59,11 +55,6 @@ object Launcher {
       "Jalr" -> { (manager: TesterOptionsManager) =>
         Driver.execute(() => new Jalr(), manager) {
           (c) => new JalrTests(c)
-        }
-      },
-      "IF_ID" -> { (manager: TesterOptionsManager) =>
-        Driver.execute(() => new IF_ID(), manager) {
-          (c) => new IF_IDTests(c)
         }
       },
       "ID_EX" -> { (manager: TesterOptionsManager) =>
@@ -151,9 +142,14 @@ object Launcher {
           (c) => new Load_unitTests(c)
         }
       },
-      "FetchBusController" -> { (manager: TesterOptionsManager) =>
-        Driver.execute(() => new FetchBusController(), manager) {
-          (c) => new FetchBusControllerTests(c)
+      "Foo" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new Foo(), manager) {
+          (c) => new FooTests(c)
+        }
+      },
+      "Core" -> { (manager: TesterOptionsManager) =>
+        Driver.execute(() => new Core(), manager) {
+          (c) => new CoreTests(c)
         }
       }
   )

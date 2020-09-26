@@ -13,7 +13,7 @@ class ControlDecodeTests(c: ControlDecode) extends PeekPokeTester(c) {
     step(1)
     expect(c.io.memWrite, 1)
     expect(c.io.branch, 0)
-    expect(c.io.memRead, 0)
+  //  expect(c.io.memRead, 0)
     expect(c.io.regWrite, 0)
     expect(c.io.memToReg, 0)
     expect(c.io.aluOperation, 5)

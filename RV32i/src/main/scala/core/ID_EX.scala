@@ -23,9 +23,9 @@ class ID_EX extends Module {
         val ctrl_OpA_sel_in = Input(UInt(2.W))
         val ctrl_OpB_sel_in = Input(UInt(1.W))
         val ctrl_nextPc_sel_in = Input(UInt(2.W))
-        val M_extension_enabled_in = Input(UInt(1.W))
+      //  val M_extension_enabled_in = Input(UInt(1.W))
 
-        val stall = Input(UInt(1.W))
+     //   val stall = Input(UInt(1.W))
 
         val pc_out = Output(SInt(32.W))
         val pc4_out = Output(SInt(32.W))
@@ -46,7 +46,7 @@ class ID_EX extends Module {
         val ctrl_OpA_sel_out = Output(UInt(2.W))
         val ctrl_OpB_sel_out = Output(UInt(1.W))
         val ctrl_nextPc_sel_out = Output(UInt(2.W))
-        val M_extension_enabled = Output(UInt(1.W))
+      //  val M_extension_enabled = Output(UInt(1.W))
     })
     val pc_reg = RegInit(0.S(32.W))
     val pc4_reg = RegInit(0.S(32.W))
@@ -69,9 +69,9 @@ class ID_EX extends Module {
     val ctrl_OpA_sel_reg = RegInit(0.U(2.W))
     val ctrl_OpB_sel_reg = RegInit(0.U(1.W))
     val ctrl_nextPc_sel_reg = RegInit(0.U(1.W))
-    val M_extension_reg     = RegInit(0.U(1.W))
+  //  val M_extension_reg     = RegInit(0.U(1.W))
 
-    when(io.stall =/= 1.U) {
+   // when(io.stall =/= 1.U) {
         pc_reg := io.pc_in
         pc4_reg := io.pc4_in
         rs1_reg := io.rs1_in
@@ -92,7 +92,7 @@ class ID_EX extends Module {
         ctrl_OpA_sel_reg := io.ctrl_OpA_sel_in
         ctrl_OpB_sel_reg := io.ctrl_OpB_sel_in
         ctrl_nextPc_sel_reg := io.ctrl_nextPc_sel_in
-        M_extension_reg := io.M_extension_enabled_in
+     //   M_extension_reg := io.M_extension_enabled_in
 
 
         io.pc_out := pc_reg
@@ -115,9 +115,9 @@ class ID_EX extends Module {
         io.ctrl_OpA_sel_out := ctrl_OpA_sel_reg
         io.ctrl_OpB_sel_out := ctrl_OpB_sel_reg
         io.ctrl_nextPc_sel_out := ctrl_nextPc_sel_reg
-         io.M_extension_enabled := M_extension_reg
+    //     io.M_extension_enabled := M_extension_reg
         
-    } .otherwise {
+  /*  } .otherwise {
         io.pc_out := pc_reg
         io.pc4_out := pc4_reg
         io.rs1_out := rs1_reg
@@ -139,6 +139,6 @@ class ID_EX extends Module {
         io.ctrl_OpB_sel_out := ctrl_OpB_sel_reg
         io.ctrl_nextPc_sel_out := ctrl_nextPc_sel_reg
          io.M_extension_enabled := M_extension_reg
-    }
+    }*/
 
 }

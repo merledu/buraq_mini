@@ -17,8 +17,8 @@ class ControlDecode extends Module {
         val multiply    = Input(UInt(1.W))
         // Outputs
         val memWrite = Output(UInt(1.W))
+        val memRead  = Output(UInt(1.W))
         val branch = Output(UInt(1.W))
-        val memRead = Output(UInt(1.W))
         val regWrite = Output(UInt(1.W))
         val memToReg = Output(UInt(1.W))
         val aluOperation = Output(UInt(4.W))
@@ -26,15 +26,15 @@ class ControlDecode extends Module {
         val operand_b_sel = Output(UInt(1.W))
         val extend_sel = Output(UInt(2.W))
         val next_pc_sel = Output(UInt(2.W))
-        val M_extension_enabled = Output(UInt(1.W))
+      //  val M_extension_enabled = Output(UInt(1.W))
     })
         default_signals()
 
     // R-Type instruction    
     when(io.in_r_type === 1.U) {
         io.memWrite := 0.U
+        io.memRead  := 0.U
         io.branch := 0.U
-        io.memRead := 0.U
         io.regWrite := 1.U
         io.memToReg := 0.U
         io.aluOperation := "b0000".U
@@ -42,13 +42,13 @@ class ControlDecode extends Module {
         io.operand_b_sel := 0.U
         io.extend_sel := "b00".U
         io.next_pc_sel := "b00".U
-        io.M_extension_enabled := 0.U
+      //  io.M_extension_enabled := 0.U
     } 
     .elsewhen(io.in_load_type === 1.U) {
         // Load type instruction
         io.memWrite := 0.U
+        io.memRead  := 1.U
         io.branch := 0.U
-        io.memRead := 1.U
         io.regWrite := 1.U
         io.memToReg := 1.U
         io.aluOperation := "b0100".U
@@ -59,8 +59,8 @@ class ControlDecode extends Module {
     } .elsewhen(io.in_s_type === 1.U) {
         // S-Type instruction
         io.memWrite := 1.U
+        io.memRead  := 0.U
         io.branch := 0.U
-        io.memRead := 0.U
         io.regWrite := 0.U
         io.memToReg := 0.U
         io.aluOperation := "b0101".U
@@ -70,8 +70,8 @@ class ControlDecode extends Module {
         io.next_pc_sel := "b00".U
     } .elsewhen(io.in_sb_type === 1.U) {
         io.memWrite := 0.U
+        io.memRead  := 0.U
         io.branch := 1.U
-        io.memRead := 0.U
         io.regWrite := 0.U
         io.memToReg := 0.U
         io.aluOperation := "b0010".U
@@ -81,8 +81,8 @@ class ControlDecode extends Module {
         io.next_pc_sel := "b01".U
     } .elsewhen(io.in_i_type === 1.U) {
         io.memWrite := 0.U
+        io.memRead  := 0.U
         io.branch := 0.U
-        io.memRead := 0.U
         io.regWrite := 1.U
         io.memToReg := 0.U
         io.aluOperation := "b0001".U
@@ -92,8 +92,8 @@ class ControlDecode extends Module {
         io.next_pc_sel := "b00".U
     } .elsewhen(io.in_jalr_type === 1.U) {
         io.memWrite := 0.U
+        io.memRead  := 0.U
         io.branch := 0.U
-        io.memRead := 0.U
         io.regWrite := 1.U
         io.memToReg := 0.U
         io.aluOperation := "b0011".U
@@ -103,8 +103,8 @@ class ControlDecode extends Module {
         io.next_pc_sel := "b11".U
     } .elsewhen(io.in_jal_type === 1.U) {
         io.memWrite := 0.U
+        io.memRead  := 0.U
         io.branch := 0.U
-        io.memRead := 0.U
         io.regWrite := 1.U
         io.memToReg := 0.U
         io.aluOperation := "b0011".U
@@ -116,8 +116,8 @@ class ControlDecode extends Module {
     .elsewhen(io.in_lui_type === 1.U) 
     {
         io.memWrite := 0.U
+        io.memRead  := 0.U
         io.branch := 0.U
-        io.memRead := 0.U
         io.regWrite := 1.U
         io.memToReg := 0.U
         io.aluOperation := "b0110".U
@@ -129,8 +129,8 @@ class ControlDecode extends Module {
     .elsewhen(io.Auipc === 1.U) 
     {
         io.memWrite := 0.U
+        io.memRead  := 0.U
         io.branch := 0.U
-        io.memRead := 0.U
         io.regWrite := 1.U
         io.memToReg := 0.U
         io.aluOperation := "b0111".U
@@ -141,8 +141,8 @@ class ControlDecode extends Module {
     } 
     .elsewhen(io.multiply === 1.U) {
         io.memWrite := 0.U
+        io.memRead  := 0.U
         io.branch := 0.U
-        io.memRead := 0.U
         io.regWrite := 1.U
         io.memToReg := 0.U
         io.aluOperation := "b1001".U
@@ -150,7 +150,7 @@ class ControlDecode extends Module {
         io.operand_b_sel := 0.U
         io.extend_sel := "b00".U
         io.next_pc_sel := "b00".U
-        io.M_extension_enabled := 1.U
+     //   io.M_extension_enabled := 1.U
     }
     .otherwise {
         default_signals()
@@ -159,8 +159,8 @@ class ControlDecode extends Module {
     def default_signals(): Unit =
     {
         io.memWrite := 0.U
+        io.memRead  := 0.U
         io.branch := 0.U
-        io.memRead := 0.U
         io.regWrite := 0.U
         io.memToReg := 0.U
         io.aluOperation := 28.U
@@ -168,6 +168,6 @@ class ControlDecode extends Module {
         io.operand_b_sel := 0.U
         io.extend_sel := "b00".U
         io.next_pc_sel := "b00".U
-        io.M_extension_enabled := 0.U
+     //   io.M_extension_enabled := 0.U
     }
 }
