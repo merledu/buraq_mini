@@ -38,15 +38,16 @@ class Fetch extends Module {
     val inst_reg = RegInit(0.U(32.W))
 
   pc.io.instr_rvalid_i := io.instr_rvalid_i
+  io.instr_addr_o := pc.io.out(13,0).asUInt
 
   when(io.instr_gnt_i)
   {
-    io.instr_addr_o := pc.io.out(13,0).asUInt
+//    io.instr_addr_o := pc.io.out(13,0).asUInt
     io.instr_req_o := true.B
   }
   .otherwise
   {
-    io.instr_addr_o := 0.U(32.W)
+//    io.instr_addr_o := 0.U(32.W)
     io.instr_req_o := false.B
   }
   
