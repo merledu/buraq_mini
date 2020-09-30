@@ -11,8 +11,8 @@ class Core extends Module {
         val data_req_o = Output(Bool())
         val data_we_o  = Output(Bool())
         val data_be_o  = Output(UInt(4.W))
-        val data_addr_o= Output(SInt(32.W))
-        val data_wdata_0= Output(SInt(32.W))
+        val data_addr_o = Output(SInt(32.W))
+        val data_wdata_o = Output(SInt(32.W))
 
         // instruction memory interface
 
@@ -177,7 +177,7 @@ class Core extends Module {
     io.data_req_o := memory_stage.io.data_req_o
     io.data_be_o  := memory_stage.io.data_be_o
     io.data_we_o  := memory_stage.io.ctrl_MemWr_out
-    io.data_wdata_0:= memory_stage.io.rs2_out
+    io.data_wdata_o := memory_stage.io.rs2_out
     io.data_addr_o := memory_stage.io.memAddress
 
 
@@ -192,7 +192,8 @@ class Core extends Module {
 
    // MEM_WB.io.stall := staller.io.stall
     MEM_WB.io.alu_in := memory_stage.io.alu_output
-    MEM_WB.io.dmem_data_in := memory_stage.io.data_out
+   // not passing data memory data into MEM/WB register since it's output itself is registered
+  //  MEM_WB.io.dmem_data_in := memory_stage.io.data_out
   //  MEM_WB.io.dmem_data_in := loadStoreBusController.io.data.asSInt
     MEM_WB.io.rd_sel_in := memory_stage.io.rd_sel_out
 
@@ -206,7 +207,9 @@ class Core extends Module {
 
 
     writeback.io.MEM_WB_MemToReg := MEM_WB.io.ctrl_MemToReg_out
-    writeback.io.MEM_WB_dataMem_data := MEM_WB.io.dmem_data_out
+   // directly passing the data memory result to the write back stage
+   // since it's output is already registered so we pass it directly.
+    writeback.io.MEM_WB_dataMem_data := memory_stage.io.data_out
     writeback.io.MEM_WB_alu_output := MEM_WB.io.alu_output
 
 
