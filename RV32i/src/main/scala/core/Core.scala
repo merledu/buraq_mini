@@ -73,10 +73,10 @@ class Core extends Module {
     decode.io.IF_ID_pc4 := fetch.io.pc4_out
     decode.io.MEM_WB_ctrl_regWr := MEM_WB.io.ctrl_RegWr_out
     decode.io.MEM_WB_rd_sel := MEM_WB.io.rd_sel_out
-    decode.io.ID_EX_ctrl_MemRd := ~ID_EX.io.ctrl_MemWr_out
+    decode.io.ID_EX_ctrl_MemRd := ID_EX.io.ctrl_MemRd_out
     decode.io.ID_EX_rd_sel := ID_EX.io.rd_sel_out
     decode.io.EX_MEM_rd_sel := EX_MEM.io.rd_sel_out
-    decode.io.EX_MEM_ctrl_MemRd := ~EX_MEM.io.ctrl_MemWr_out
+    decode.io.EX_MEM_ctrl_MemRd := EX_MEM.io.ctrl_MemRd_out
     decode.io.MEM_WB_ctrl_MemRd := MEM_WB.io.ctrl_MemRd_out
     decode.io.writeback_write_data := writeback.io.write_data
     decode.io.alu_output := execute.io.alu_output

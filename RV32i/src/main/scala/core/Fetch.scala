@@ -1,6 +1,7 @@
 package core
 
 import chisel3._
+import chisel3.util._
 
 class Fetch extends Module {
   val io = IO(new Bundle {
@@ -30,28 +31,36 @@ class Fetch extends Module {
     val pc4_out = Output(SInt(32.W))
     val inst_out = Output(UInt(32.W))
   })
+  val NOP = "b00000000000000000000000000010011".U(32.W) // NOP instruction
 
   val pc = Module(new Pc())
 
-    val pc_reg = RegInit(0.S(32.W))
-    val pc4_reg = RegInit(0.S(32.W))
-    val inst_reg = RegInit(0.U(32.W))
+  // IF/ID registers
+  val pc_reg = Reg(SInt())
+  val pc4_reg = Reg(SInt())
+  val inst_reg = RegInit(NOP)
 
-  pc.io.instr_rvalid_i := io.instr_rvalid_i
-  io.instr_addr_o := pc.io.out(13,0).asUInt
+  // This holds the reset value until next clock cycle
+  val started = RegNext(reset.asBool())
 
-  when(io.instr_gnt_i)
-  {
-//    io.instr_addr_o := pc.io.out(13,0).asUInt
-    io.instr_req_o := true.B
-  }
-  .otherwise
-  {
-//    io.instr_addr_o := 0.U(32.W)
-    io.instr_req_o := false.B
-  }
-  
+  // Send the next pc value to the instruction memory
+  io.instr_addr_o := pc.io.in(13,0).asUInt
+  // always setting req_o to true for TL-Host to generate request
+  io.instr_req_o := true.B
+//  when(io.instr_rvalid_i)
+//  {
+// //   io.instr_addr_o := pc.io.out(13,0).asUInt
+//    io.instr_req_o := true.B
+//  }
+//  .otherwise
+//  {
+//   // io.instr_addr_o := 0.U(32.W)
+//    io.instr_req_o := false.B
+//  }
+
+  // send the current pc value to the Decode stage
   pc_reg := pc.io.out
+  // send the pc + 4 to the Decode stage
   pc4_reg := pc.io.pc4
 
 
@@ -59,7 +68,11 @@ class Fetch extends Module {
     inst_reg := io.hazardDetection_inst_out
     pc_reg := io.hazardDetection_current_pc_out
   } .otherwise {
-    inst_reg := io.instr_rdata_i
+    // instead of sending the instruction data directly to the decode first see if
+    // the reset has been low for one cycle with the `started` val. If `started` is
+    // high it means the reset has not been low for one clock cycle so still send
+    // NOP instruction to the Decode otherwise send the received data from the ICCM.
+    inst_reg := Mux(started, NOP, io.instr_rdata_i)
   }
 
   // Stopping the pc from updating since the pipeline has to be stalled. When the instruction is 0 and the next pc select
@@ -70,37 +83,37 @@ class Fetch extends Module {
 //    pc.io.in := pc.io.out
 //    //pc.io.stall := 1.U
 //  } .otherwise {
-    when(io.hazardDetection_pc_forward === 1.U) {
-      pc.io.in := io.hazardDetection_pc_out
-    }.otherwise {
-      when(io.ctrl_next_pc_sel === "b01".U) {
-        when(io.branchLogic_output === 1.U && io.ctrl_out_branch === 1.U) {
-          pc.io.in := io.sb_imm
-          pc_reg := 0.S
-          pc4_reg := 0.S
-          inst_reg := 0.U
-        }.otherwise {
-          pc.io.in := pc.io.pc4
-        }
-      }.elsewhen(io.ctrl_next_pc_sel === "b10".U) {
-        pc.io.in := io.uj_imm
+  when(io.hazardDetection_pc_forward === 1.U) {
+    pc.io.in := io.hazardDetection_pc_out
+  }.otherwise
+  {
+    when(io.ctrl_next_pc_sel === "b01".U) {
+      when(io.branchLogic_output === 1.U && io.ctrl_out_branch === 1.U) {
+        pc.io.in := io.sb_imm
         pc_reg := 0.S
         pc4_reg := 0.S
-        inst_reg := 0.U
-      }.elsewhen(io.ctrl_next_pc_sel === "b11".U) {
-        pc.io.in := io.jalr_imm
-        pc_reg := 0.S
-        pc4_reg := 0.S
-        inst_reg := 0.U
+        inst_reg := NOP
       }.otherwise {
         pc.io.in := pc.io.pc4
       }
+    }.elsewhen(io.ctrl_next_pc_sel === "b10".U) {
+      pc.io.in := io.uj_imm
+      pc_reg := 0.S
+      pc4_reg := 0.S
+      inst_reg := NOP
+    }.elsewhen(io.ctrl_next_pc_sel === "b11".U) {
+      pc.io.in := io.jalr_imm
+      pc_reg := 0.S
+      pc4_reg := 0.S
+      inst_reg := NOP
+    }.otherwise {
+      pc.io.in := pc.io.pc4
     }
-//  }
+  }
 
 
-    io.pc_out := pc_reg
-    io.pc4_out:= pc4_reg
-    io.inst_out := inst_reg 
 
+  io.pc_out := pc_reg
+  io.pc4_out:=  pc4_reg
+  io.inst_out := inst_reg
 }
