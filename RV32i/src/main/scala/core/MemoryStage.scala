@@ -32,6 +32,7 @@ class MemoryStage extends Module {
     // 
   // 
 
+    val stall = Output(Bool())
   })
 
   val store = Module(new Store_unit())
@@ -52,6 +53,8 @@ class MemoryStage extends Module {
   io.data_be_o := Mux(io.func3 === "b001".U, Mux(io.EX_MEM_alu_output(1), "b1100".U, "b0011".U),
                   Mux(io.func3 === "b010".U,"b1111".U, "b0000".U))
 
+  io.stall := (io.EX_MEM_MemWr === 1.U || io.EX_MEM_MemRd === 1.U) && !io.data_rvalid_i
+
   when(io.data_gnt_i & (io.EX_MEM_MemWr===1.U))
   {
     io.data_req_o := true.B
@@ -64,6 +67,7 @@ class MemoryStage extends Module {
       io.memAddress := DontCare
       io.rs2_out        := DontCare
     }
+
   when(io.EX_MEM_MemRd === 1.U)
   {
     when(io.data_gnt_i & (io.EX_MEM_MemWr=/=1.U))
