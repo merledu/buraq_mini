@@ -28,18 +28,20 @@ class Core extends Module {
  })
     
  //   val IF_ID = Module(new IF_ID())
-    val ID_EX = Module(new ID_EX())
-    val EX_MEM = Module(new EX_MEM())
-    val MEM_WB = Module(new MEM_WB())
-    val fetch = Module(new Fetch())
-    val decode = Module(new Decode())
-    val execute = Module(new Execute())
-    val memory_stage = Module(new MemoryStage())
-    val writeback = Module(new WriteBack())
+   val ID_EX = Module(new ID_EX())
+   val EX_MEM = Module(new EX_MEM())
+   val MEM_WB = Module(new MEM_WB())
+   val fetch = Module(new Fetch())
+   val decode = Module(new Decode())
+   val execute = Module(new Execute())
+   val memory_stage = Module(new MemoryStage())
+   val writeback = Module(new WriteBack())
 
-  
+   // for now setting stall to be false.
+   val stall = memory_stage.io.stall
+
     // *********** ----------- INSTRUCTION FETCH (IF) STAGE ----------- ********* //
-    //fetch.io.stall := staller.io.stall
+    fetch.io.stall := stall
     // instruction memory bus connections(inputs)
     fetch.io.instr_gnt_i := io.instr_gnt_i
     fetch.io.instr_rvalid_i := io.instr_rvalid_i
@@ -87,7 +89,7 @@ class Core extends Module {
   //  val M_extension_parameter = enabel_M
   //  decode.io.enable_M_extension := M_extension_parameter
 
-   // ID_EX.io.stall := staller.io.stall
+    ID_EX.io.stall := stall
     ID_EX.io.ctrl_MemWr_in := decode.io.ctrl_MemWr_out
     ID_EX.io.ctrl_MemRd_in := decode.io.ctrl_MemRd_out
     ID_EX.io.ctrl_Branch_in := decode.io.ctrl_Branch_out
@@ -142,7 +144,7 @@ class Core extends Module {
     execute.io.ID_EX_ctrl_MemToReg := ID_EX.io.ctrl_MemToReg_out
    // execute.io.M_extension_enabled := ID_EX.io.M_extension_enabled
 
-  //  EX_MEM.io.stall := staller.io.stall
+    EX_MEM.io.stall := stall
     // Passing the ALU output to the EX/MEM pipeline register
     EX_MEM.io.alu_in := execute.io.alu_output
 
@@ -190,10 +192,10 @@ class Core extends Module {
 
 
 
-   // MEM_WB.io.stall := staller.io.stall
+    MEM_WB.io.stall := stall
     MEM_WB.io.alu_in := memory_stage.io.alu_output
    // not passing data memory data into MEM/WB register since it's output itself is registered
-  //  MEM_WB.io.dmem_data_in := memory_stage.io.data_out
+    MEM_WB.io.dmem_data_in := memory_stage.io.data_out
   //  MEM_WB.io.dmem_data_in := loadStoreBusController.io.data.asSInt
     MEM_WB.io.rd_sel_in := memory_stage.io.rd_sel_out
 
@@ -209,7 +211,8 @@ class Core extends Module {
     writeback.io.MEM_WB_MemToReg := MEM_WB.io.ctrl_MemToReg_out
    // directly passing the data memory result to the write back stage
    // since it's output is already registered so we pass it directly.
-    writeback.io.MEM_WB_dataMem_data := memory_stage.io.data_out
+//    writeback.io.MEM_WB_dataMem_data := memory_stage.io.data_out
+    writeback.io.MEM_WB_dataMem_data := MEM_WB.io.dmem_data_out
     writeback.io.MEM_WB_alu_output := MEM_WB.io.alu_output
 
 
