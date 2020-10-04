@@ -200,7 +200,7 @@ class Core extends Module {
     MEM_WB.io.rd_sel_in := memory_stage.io.rd_sel_out
 
     MEM_WB.io.ctrl_RegWr_in := memory_stage.io.ctrl_RegWr_out
-    MEM_WB.io.ctrl_MemRd_in := ~memory_stage.io.ctrl_MemWr_out
+    MEM_WB.io.ctrl_MemRd_in := memory_stage.io.ctrl_MemRd_out
     MEM_WB.io.ctrl_MemToReg_in := memory_stage.io.ctrl_MemToReg_out
 
 
