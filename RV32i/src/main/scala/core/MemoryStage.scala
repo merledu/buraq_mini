@@ -27,16 +27,21 @@ class MemoryStage extends Module {
     val alu_output = Output(SInt(32.W))
     val rd_sel_out = Output(UInt(5.W))
     val ctrl_RegWr_out = Output(UInt(1.W))
-//    val ctrl_MemRd_out = Output(UInt(1.W))
+    val ctrl_MemRd_out = Output(UInt(1.W))
     val ctrl_MemToReg_out = Output(UInt(1.W))
-    // 
-  // 
 
     val stall = Output(Bool())
   })
 
-  val store = Module(new Store_unit())
-  val load = Module(new Load_unit())
+//  val store = Module(new Store_unit())
+//  val load = Module(new Load_unit())
+
+  // Stalling the pipeline as soon as we get a load or store instruction
+  // and the data received from memory is not valid.
+  // As soon as we get a valid data from memory we pull down the stall.
+
+  io.stall := (io.EX_MEM_MemWr === 1.U || io.EX_MEM_MemRd === 1.U) && !io.data_rvalid_i
+
 
   /** ||||||||||||||||| SETTING BYTE ENABLE io.data_be_o TO BE USED BY THE TL-HOST ||||||||||||||||| */
   // func3 -> 001 means store half word instruction (sh)
@@ -53,55 +58,28 @@ class MemoryStage extends Module {
   io.data_be_o := Mux(io.func3 === "b001".U, Mux(io.EX_MEM_alu_output(1), "b1100".U, "b0011".U),
                   Mux(io.func3 === "b010".U,"b1111".U, "b0000".U))
 
-  io.stall := (io.EX_MEM_MemWr === 1.U || io.EX_MEM_MemRd === 1.U) && !io.data_rvalid_i
 
-  when(io.data_gnt_i & (io.EX_MEM_MemWr===1.U))
+
+  when(io.data_gnt_i && (io.EX_MEM_MemWr===1.U))
   {
     io.data_req_o := true.B
     io.memAddress := io.EX_MEM_alu_output(13, 0).asSInt
-    io.rs2_out        := store.io.StoreData
-  }
-    .otherwise
+//    io.rs2_out    := store.io.StoreData
+    io.rs2_out    := io.EX_MEM_rs2
+  } .elsewhen(io.data_gnt_i && (io.EX_MEM_MemRd === 1.U)) {
+    io.data_req_o := true.B
+    io.memAddress := io.EX_MEM_alu_output(13, 0).asSInt
+    io.rs2_out := DontCare
+  } .otherwise
     {
       io.data_req_o := false.B
       io.memAddress := DontCare
       io.rs2_out        := DontCare
     }
 
-  when(io.EX_MEM_MemRd === 1.U)
-  {
-    when(io.data_gnt_i & (io.EX_MEM_MemWr=/=1.U))
-    {
-      io.data_req_o := true.B
-      io.memAddress := io.EX_MEM_alu_output(13, 0).asSInt
-    }
-      .otherwise
-      {
-        io.data_req_o := false.B
-        io.memAddress := DontCare
-      }
-    load.io.MemRead := ~io.EX_MEM_MemWr
-    store.io.MemWrite := 0.U
-    io.ctrl_MemWr_out := 0.U
-  }
-    .otherwise
-    {
-      load.io.MemRead := 0.U
-      store.io.MemWrite := io.EX_MEM_MemWr
-      io.ctrl_MemWr_out := io.EX_MEM_MemWr
-    }
-
-  store.io.func3 := io.func3
-  store.io.MemWrite := io.EX_MEM_MemWr
-  store.io.Rs2      := io.EX_MEM_rs2
-
-      
-  load.io.func3 := io.func3
-      
-  load.io.MemData:= io.data_rdata_i
   when(io.data_rvalid_i)
   {
-    io.data_out     := load.io.LoadData
+    io.data_out     := io.data_rdata_i
   }
     .otherwise
     {
@@ -109,14 +87,12 @@ class MemoryStage extends Module {
     }
       
 
- //   io.memAddress := io.EX_MEM_alu_output(13, 0).asUInt
   io.ctrl_MemWr_out := io.EX_MEM_MemWr
-
   io.alu_output := io.EX_MEM_alu_output
-  //io.rs2_out := io.EX_MEM_rs2
+
   io.rd_sel_out := io.EX_MEM_rd_sel
   io.ctrl_RegWr_out := io.EX_MEM_RegWr
- //   io.ctrl_MemRd_out := io.EX_MEM_MemRd
+  io.ctrl_MemRd_out := io.EX_MEM_MemRd
   io.ctrl_MemToReg_out := io.EX_MEM_MemToReg
     
 
