@@ -14,13 +14,13 @@ class StructuralDetector extends Module {
     val fwd_rs2 = Output(UInt(1.W))
   })
 
-  when(io.MEM_WB_regWr === 1.U &&  io.MEM_WB_REGRD === io.rs1_sel) {
+  when(io.MEM_WB_regWr === 1.U && io.MEM_WB_REGRD =/= "b00000".U &&  io.MEM_WB_REGRD === io.rs1_sel) {
     io.fwd_rs1 := 1.U
   } .otherwise {
     io.fwd_rs1 := 0.U
   }
 
-  when(io.MEM_WB_regWr === 1.U && io.MEM_WB_REGRD === io.rs2_sel) {
+  when(io.MEM_WB_regWr === 1.U && io.MEM_WB_REGRD =/= "b00000".U  && io.MEM_WB_REGRD === io.rs2_sel) {
     io.fwd_rs2 := 1.U
   } .otherwise {
     io.fwd_rs2 := 0.U
