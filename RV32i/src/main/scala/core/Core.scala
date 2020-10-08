@@ -1,6 +1,7 @@
 package core
 
 import chisel3._
+import chisel3.util.Cat
 
 class Core extends Module {
     val io = IO(new Bundle {
@@ -10,9 +11,9 @@ class Core extends Module {
         val data_rdata_i  = Input(SInt(32.W))
         val data_req_o = Output(Bool())
         val data_we_o  = Output(Bool())
-        val data_be_o  = Output(UInt(4.W))
+        val data_be_o  = Output(Vec(4, Bool()))
         val data_addr_o = Output(SInt(32.W))
-        val data_wdata_o = Output(SInt(32.W))
+        val data_wdata_o = Output(Vec(4, SInt(8.W)))
 
         // instruction memory interface
 
@@ -39,6 +40,7 @@ class Core extends Module {
 
    // for now setting stall to be false.
    val stall = memory_stage.io.stall
+
 
     // *********** ----------- INSTRUCTION FETCH (IF) STAGE ----------- ********* //
     fetch.io.stall := stall
@@ -179,7 +181,7 @@ class Core extends Module {
     io.data_req_o := memory_stage.io.data_req_o
     io.data_be_o  := memory_stage.io.data_be_o
     io.data_we_o  := memory_stage.io.ctrl_MemWr_out
-    io.data_wdata_o := memory_stage.io.rs2_out
+    io.data_wdata_o := memory_stage.io.data_wdata_o
     io.data_addr_o := memory_stage.io.memAddress
 
 
