@@ -34,8 +34,7 @@ class MemoryStage extends Module {
     val stall = Output(Bool())
   })
 
-//  val store = Module(new Store_unit())
-//  val load = Module(new Load_unit())
+  val load_unit = Module(new Load_unit())
 
   val data_offset = io.EX_MEM_alu_output(1,0)
   val data_wdata = Wire(Vec(4, SInt(8.W)))
@@ -46,6 +45,17 @@ class MemoryStage extends Module {
   // As soon as we get a valid data from memory we pull down the stall.
 
   io.stall := (io.EX_MEM_MemWr === 1.U || io.EX_MEM_MemRd === 1.U) && !io.data_rvalid_i
+
+  /** |||||||||||||||||||||||||||||| INITIALIZING LOAD UNIT ||||||||||||||||||||||||||||||| */
+
+  /** ******************************************START****************************************************** */
+  load_unit.io.func3 := io.func3
+  load_unit.io.MemData := io.data_rdata_i
+  load_unit.io.en := false.B
+
+  /** ******************************************END****************************************************** */
+
+
 
   /** |||||||||||||||||||||||||||||| SETTING MASK BITS FOR WRITE OPERATIONS ||||||||||||||||||||||||||||||| */
 
@@ -176,7 +186,6 @@ class MemoryStage extends Module {
   } .otherwise {
     io.data_be_o := DontCare
   }
-  // TODO use these connections to implement masked writes in dccm
 
   /** ******************************************END****************************************************** */
 
@@ -212,13 +221,17 @@ class MemoryStage extends Module {
     data_wdata(3) := io.EX_MEM_rs2(31,24).asSInt()
   }
 
+  /** ******************************************END****************************************************** */
 
+
+  /** |||||||||||||||||||||||||||| GENERATING WRITE/READ REQUEST TO TILELINK |||||||||||||||||||||||||||| */
+
+  /** ******************************************START****************************************************** */
 
   when(io.data_gnt_i && (io.EX_MEM_MemWr===1.U))
   {
     io.data_req_o := true.B
     io.memAddress := io.EX_MEM_alu_output(13, 0).asSInt
-//    io.data_wdata_o    := io.EX_MEM_rs2
     io.data_wdata_o := data_wdata
   } .elsewhen(io.data_gnt_i && (io.EX_MEM_MemRd === 1.U)) {
     io.data_req_o := true.B
@@ -231,16 +244,33 @@ class MemoryStage extends Module {
       io.data_wdata_o        := DontCare
     }
 
-  when(io.data_rvalid_i)
+
+  /** ******************************************END****************************************************** */
+
+
+  /** |||||||||||||||||||||||||||| READING DATA FROM MEMORY IN NEXT CLOCK CYCLE |||||||||||||||||||||||||||| */
+
+  /** ******************************************START****************************************************** */
+  // TODO lh,lhu,lb,lbu working correctly for word-aligned addresses only, need to align it with un-aligned addresses as well
+  when(io.data_rvalid_i && io.EX_MEM_MemRd === 1.U)
   {
-    io.data_out     := io.data_rdata_i
+    load_unit.io.en := true.B   // enabling the load_unit to now read and sign extend the valid data
+//    io.data_out     := io.data_rdata_i
+    io.data_out     := load_unit.io.LoadData
   }
     .otherwise
     {
       io.data_out     := DontCare
     }
-      
 
+
+  /** ******************************************END****************************************************** */
+
+
+
+  /** |||||||||||||||||||||||||||| PASSING SIGNALS TO THE MEM/WB REGISTER |||||||||||||||||||||||||||| */
+
+  /** ******************************************START****************************************************** */
   io.ctrl_MemWr_out := io.EX_MEM_MemWr
   io.alu_output := io.EX_MEM_alu_output
 
@@ -248,7 +278,7 @@ class MemoryStage extends Module {
   io.ctrl_RegWr_out := io.EX_MEM_RegWr
   io.ctrl_MemRd_out := io.EX_MEM_MemRd
   io.ctrl_MemToReg_out := io.EX_MEM_MemToReg
-    
 
+  /** ******************************************END****************************************************** */
 
 }
