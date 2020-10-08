@@ -1,7 +1,7 @@
 package core
 
 import chisel3._
-import chisel3.util.MuxCase
+import chisel3.util.Cat
 
 class MemoryStage extends Module {
   val io = IO(new Bundle {
@@ -20,7 +20,7 @@ class MemoryStage extends Module {
     val data_req_o   = Output(Bool())
     val data_be_o  = Output(Vec(4, Bool()))
     val ctrl_MemWr_out = Output(UInt(1.W)) // data_we_o
-    val rs2_out = Output(SInt(32.W)) // data_wdata_o
+    val data_wdata_o = Output(Vec(4, SInt(8.W))) // data_wdata_o
     val memAddress = Output(SInt(32.W)) // data_addr_o
     val data_out   = Output(SInt(32.W))
 
@@ -38,6 +38,7 @@ class MemoryStage extends Module {
 //  val load = Module(new Load_unit())
 
   val data_offset = io.EX_MEM_alu_output(1,0)
+  val data_wdata = Wire(Vec(4, SInt(8.W)))
 
 
   // Stalling the pipeline as soon as we get a load or store instruction
@@ -46,19 +47,20 @@ class MemoryStage extends Module {
 
   io.stall := (io.EX_MEM_MemWr === 1.U || io.EX_MEM_MemRd === 1.U) && !io.data_rvalid_i
 
-  /** [START] ||||||||||||||||| SETTING MASK BITS FOR WRITE OPERATIONS [START] ||||||||||||||||||| */
+  /** |||||||||||||||||||||||||||||| SETTING MASK BITS FOR WRITE OPERATIONS ||||||||||||||||||||||||||||||| */
 
   /** ******************************************START****************************************************** */
 
+  /** Visualize memory as follows
+   *      11          10        9         8  -> address
+   * | d[31:24] | d[23:16] | d[15:8] | d[7:0] |
+   *      7           6         5         4  -> address
+   * | d[31:24] | d[23:16] | d[15:8] | d[7:0] |
+   *      3           2         1         0  -> address
+   * | d[31:24] | d[23:16] | d[15:8] | d[7:0] |  */
+
   when(io.func3 === "b010".U && io.EX_MEM_MemWr === 1.U) {
-    /** Visualize memory as follows
-     *      11          10        9         8  -> address
-     * | d[31:24] | d[23:16] | d[15:8] | d[7:0] |
-     *      7           6         5         4  -> address
-     * | d[31:24] | d[23:16] | d[15:8] | d[7:0] |
-     *      3           2         1         0  -> address
-     * | d[31:24] | d[23:16] | d[15:8] | d[7:0] |  */
-    // store word
+    /** !!!!!!!!!!!!!!!!!!!! STORE WORD !!!!!!!!!!!!!!!!!!!! */
     when(data_offset === "b00".U) {
       // addressing 0,4,8... location of memory, enable all mask bits to write 32 bits data.
       for(i <- 0 until 4) {
@@ -95,7 +97,7 @@ class MemoryStage extends Module {
     }
 
   } .elsewhen(io.func3 === "b001".U && io.EX_MEM_MemWr === 1.U) {
-    // store halfword
+    /** !!!!!!!!!!!!!!!!!!!! STORE HALF WORD !!!!!!!!!!!!!!!!!!!! */
     when(data_offset === "b00".U) {
       // addressing 0,4,8... location of memory, enable two LSB mask bits to write 16 bits data.
       for(i <- 0 until 2) {
@@ -111,7 +113,7 @@ class MemoryStage extends Module {
       for(i <- 1 until 3) {
         io.data_be_o(i) := true.B
       }
-      io.data_be_o(4) := false.B
+      io.data_be_o(3) := false.B
       // data_be_o -> 0110
     } .elsewhen(data_offset === "b10".U) {
       // addressing 2,6,10... location of memory, enable 2 MSB mask bits to write data. Ignore the first two bytes
@@ -135,7 +137,7 @@ class MemoryStage extends Module {
       }
     }
   } .elsewhen(io.func3 === "b000".U && io.EX_MEM_MemWr === 1.U) {
-    // store byte
+    /** !!!!!!!!!!!!!!!!!!!! STORE BYTE !!!!!!!!!!!!!!!!!!!! */
     when(data_offset === "b00".U) {
       // addressing 0,4,8... location of memory, enable zeroth LSB mask bit to write 8 bits data.
       io.data_be_o(0) := true.B
@@ -179,6 +181,36 @@ class MemoryStage extends Module {
   /** ******************************************END****************************************************** */
 
 
+  /** |||||||||||||||||||||||||||| ALIGNING DATA TO BE WRITTEN INTO THE MEMORY |||||||||||||||||||||||||||| */
+
+  /** ******************************************START****************************************************** */
+
+  when(data_offset === "b00".U) {
+    data_wdata(0) := io.EX_MEM_rs2(7,0).asSInt()
+    data_wdata(1) := io.EX_MEM_rs2(15,8).asSInt()
+    data_wdata(2) := io.EX_MEM_rs2(23,16).asSInt()
+    data_wdata(3) := io.EX_MEM_rs2(31,24).asSInt()
+  } .elsewhen(data_offset === "b01".U) {
+    data_wdata(0) := io.EX_MEM_rs2(31,24).asSInt()
+    data_wdata(1) := io.EX_MEM_rs2(7,0).asSInt()
+    data_wdata(2) := io.EX_MEM_rs2(15,8).asSInt()
+    data_wdata(3) := io.EX_MEM_rs2(23,16).asSInt()
+  } .elsewhen(data_offset === "b10".U) {
+    data_wdata(0) := io.EX_MEM_rs2(31,24).asSInt()
+    data_wdata(1) := io.EX_MEM_rs2(23,16).asSInt()
+    data_wdata(2) := io.EX_MEM_rs2(7,0).asSInt()
+    data_wdata(3) := io.EX_MEM_rs2(15,8).asSInt()
+  } .elsewhen(data_offset === "b11".U) {
+    data_wdata(0) := io.EX_MEM_rs2(31,24).asSInt()
+    data_wdata(1) := io.EX_MEM_rs2(23,16).asSInt()
+    data_wdata(2) := io.EX_MEM_rs2(15,8).asSInt()
+    data_wdata(3) := io.EX_MEM_rs2(7,0).asSInt()
+  } .otherwise {
+    data_wdata(0) := io.EX_MEM_rs2(7,0).asSInt()
+    data_wdata(1) := io.EX_MEM_rs2(15,8).asSInt()
+    data_wdata(2) := io.EX_MEM_rs2(23,16).asSInt()
+    data_wdata(3) := io.EX_MEM_rs2(31,24).asSInt()
+  }
 
 
 
@@ -186,17 +218,17 @@ class MemoryStage extends Module {
   {
     io.data_req_o := true.B
     io.memAddress := io.EX_MEM_alu_output(13, 0).asSInt
-//    io.rs2_out    := store.io.StoreData
-    io.rs2_out    := io.EX_MEM_rs2
+//    io.data_wdata_o    := io.EX_MEM_rs2
+    io.data_wdata_o := data_wdata
   } .elsewhen(io.data_gnt_i && (io.EX_MEM_MemRd === 1.U)) {
     io.data_req_o := true.B
     io.memAddress := io.EX_MEM_alu_output(13, 0).asSInt
-    io.rs2_out := DontCare
+    io.data_wdata_o := DontCare
   } .otherwise
     {
       io.data_req_o := false.B
       io.memAddress := DontCare
-      io.rs2_out        := DontCare
+      io.data_wdata_o        := DontCare
     }
 
   when(io.data_rvalid_i)
