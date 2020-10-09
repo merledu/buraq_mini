@@ -50,7 +50,8 @@ class MemoryStage extends Module {
 
   /** ******************************************START****************************************************** */
   load_unit.io.func3 := io.func3
-  load_unit.io.MemData := io.data_rdata_i
+  load_unit.io.memData := io.data_rdata_i
+  load_unit.io.data_offset := data_offset
   load_unit.io.en := false.B
 
   /** ******************************************END****************************************************** */
