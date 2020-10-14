@@ -16,13 +16,14 @@ class Core extends Module {
         val data_wdata_o = Output(Vec(4, SInt(8.W)))
 
         // instruction memory interface
-
         val instr_gnt_i = Input(Bool())
         val instr_rvalid_i = Input(Bool())
         val instr_rdata_i = Input(UInt(32.W))
         val instr_req_o   = Output(Bool())
         val instr_addr_o  = Output(UInt(32.W))
-        
+
+        // stall signal coming from SoC to stall until the UART writes into ICCM
+        val stall_core_i = Input(Bool())
 
         val reg_7 = Output(SInt(32.W))
         val reg_out = Output(SInt(32.W))
@@ -38,8 +39,8 @@ class Core extends Module {
    val memory_stage = Module(new MemoryStage())
    val writeback = Module(new WriteBack())
 
-   // for now setting stall to be false.
-   val stall = memory_stage.io.stall
+   // stalling the core either for loads/stores or after initial boot up to wait until UART writes program into ICCM.
+   val stall = memory_stage.io.stall || io.stall_core_i
 
 
     // *********** ----------- INSTRUCTION FETCH (IF) STAGE ----------- ********* //
