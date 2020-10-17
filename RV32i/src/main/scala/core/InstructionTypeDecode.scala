@@ -24,20 +24,13 @@ class InstructionTypeDecode extends Module {
     {
         when(io.func7 === "b000001".U)
         {
-          /* when(io.enable_M_extension === 1.U)
-            {
-                io.multiply := 1.U
-            }
-            .otherwise
-            {
-                io.multiply := 0.U
-            }*/
-                io.r_type   := 0.U
+          io.multiply := 1.U
+          io.r_type   := 0.U
        }
-      .otherwise
-       {
-            io.r_type := 1.U
-       }        
+        .otherwise
+        {
+          io.r_type := 1.U
+        }
     } 
     .elsewhen(io.opcode === "b0000011".U) {
         io.load_type := 1.U
