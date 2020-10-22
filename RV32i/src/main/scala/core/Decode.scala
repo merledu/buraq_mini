@@ -28,7 +28,7 @@ class Decode extends Module {
 
     val pc_out = Output(SInt(32.W))
     val pc4_out = Output(SInt(32.W))
-    val inst_out = Output(UInt(32.W))
+    val inst_op_out = Output(UInt(32.W))
     val func3_out = Output(UInt(3.W))
     val func7_out = Output(UInt(7.W))
     val rd_sel_out = Output(UInt(5.W))
@@ -102,8 +102,8 @@ class Decode extends Module {
   decodeForwardUnit.io.ctrl_branch := control.io.out_branch
 
   decodeForwardUnit.io.execute_regwrite := io.execute_regwrite
-  decodeForwardUnit.io.mem_regwrite := io.mem_regwrite 
-  decodeForwardUnit.io.wb_regwrite := io.wb_regwrite 
+  decodeForwardUnit.io.mem_regwrite := io.mem_regwrite
+  decodeForwardUnit.io.wb_regwrite := io.wb_regwrite
 
   branchLogic.io.in_func3 := io.IF_ID_inst(14,12)
 
@@ -216,7 +216,7 @@ class Decode extends Module {
 //  reg_file.io.stall := io.stall
   reg_file.io.rd_sel := io.MEM_WB_rd_sel
   reg_file.io.writeData := io.writeback_write_data
-  
+
 
   // Initialize Immediate Generation
   imm_generation.io.instruction := io.IF_ID_inst
@@ -262,7 +262,7 @@ class Decode extends Module {
 
   io.pc_out := io.IF_ID_pc
   io.pc4_out := io.IF_ID_pc4
-  io.inst_out := io.IF_ID_inst
+  io.inst_op_out := io.IF_ID_inst(6,0)    // used by the forward unit to see if instruction is eligible for data hazards
   io.func3_out := io.IF_ID_inst(14,12)
   io.func7_out := io.IF_ID_inst(31,25)
   io.rd_sel_out := io.IF_ID_inst(11,7)

@@ -21,6 +21,7 @@ class Execute extends Module {
     val ID_EX_imm = Input(SInt(32.W))
     val ID_EX_ctrl_AluOp = Input(UInt(4.W))
     val ID_EX_func7 = Input(UInt(7.W))
+    val ID_EX_inst_op = Input(UInt(7.W))
     val ID_EX_func3 = Input(UInt(3.W))
     val ID_EX_rd_sel = Input(UInt(5.W))
     val ID_EX_ctrl_MemWr = Input(UInt(1.W))
@@ -47,6 +48,7 @@ class Execute extends Module {
   val alu_control = Module(new AluControl())
 
   // Initialize forward unit
+  forwardUnit.io.ID_EX_inst_op := io.ID_EX_inst_op
   forwardUnit.io.EX_MEM_REGRD := io.EX_MEM_rd_sel
   forwardUnit.io.MEM_WB_REGRD := io.MEM_WB_rd_sel
   forwardUnit.io.ID_EX_REGRS1 := io.ID_EX_rs1_sel

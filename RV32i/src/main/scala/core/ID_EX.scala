@@ -23,6 +23,7 @@ class ID_EX extends Module {
         val ctrl_OpA_sel_in = Input(UInt(2.W))
         val ctrl_OpB_sel_in = Input(UInt(1.W))
         val ctrl_nextPc_sel_in = Input(UInt(2.W))
+        val inst_op_in = Input(UInt(7.W))
       //  val M_extension_enabled_in = Input(UInt(1.W))
 
         val stall = Input(UInt(1.W))
@@ -34,6 +35,7 @@ class ID_EX extends Module {
         val imm_out = Output(SInt(32.W))
         val func3_out = Output(UInt(3.W))
         val func7_out = Output(UInt(7.W))
+        val inst_op_out = Output(UInt(7.W))
         val rd_sel_out = Output(UInt(5.W))
         val rs1_sel_out = Output(UInt(5.W))
         val rs2_sel_out = Output(UInt(5.W))
@@ -58,6 +60,7 @@ class ID_EX extends Module {
     val rs2_sel_reg = RegInit(0.U(5.W))
     val func3_reg = RegInit(0.U(3.W))
     val func7_reg = RegInit(0.U(7.W))
+    val inst_op_reg = RegInit(0.U(7.W))
     
 
     val ctrl_MemWr_reg = RegInit(0.U(1.W))
@@ -82,6 +85,7 @@ class ID_EX extends Module {
         rs2_sel_reg := io.rs2_sel_in
         func3_reg := io.func3_in
         func7_reg := io.func7_in
+        inst_op_reg := io.inst_op_in
         // Storing Control state in the registers
         ctrl_MemWr_reg := io.ctrl_MemWr_in
         ctrl_MemRd_reg := io.ctrl_MemRd_in
@@ -105,6 +109,7 @@ class ID_EX extends Module {
         io.rs2_sel_out := rs2_sel_reg
         io.func3_out := func3_reg
         io.func7_out := func7_reg
+        io.inst_op_out := inst_op_reg
 
         io.ctrl_MemWr_out := ctrl_MemWr_reg
         io.ctrl_MemRd_out := ctrl_MemRd_reg
@@ -128,6 +133,7 @@ class ID_EX extends Module {
         io.rs2_sel_out := rs2_sel_reg
         io.func3_out := func3_reg
         io.func7_out := func7_reg
+        io.inst_op_out := inst_op_reg
 
         io.ctrl_MemWr_out := ctrl_MemWr_reg
         io.ctrl_MemRd_out := ctrl_MemRd_reg

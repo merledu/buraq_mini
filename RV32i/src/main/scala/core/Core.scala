@@ -112,6 +112,7 @@ class Core extends Module {
     ID_EX.io.pc4_in := decode.io.pc4_out
     ID_EX.io.func3_in := decode.io.func3_out
     ID_EX.io.func7_in := decode.io.func7_out
+    ID_EX.io.inst_op_in := decode.io.inst_op_out
     ID_EX.io.rd_sel_in := decode.io.rd_sel_out
     ID_EX.io.rs1_sel_in := decode.io.rs1_sel_out
     ID_EX.io.rs2_sel_in := decode.io.rs2_sel_out
@@ -139,6 +140,7 @@ class Core extends Module {
     execute.io.ID_EX_imm := ID_EX.io.imm_out
     execute.io.ID_EX_ctrl_AluOp := ID_EX.io.ctrl_AluOp_out
     execute.io.ID_EX_func7 := ID_EX.io.func7_out
+    execute.io.ID_EX_inst_op := ID_EX.io.inst_op_out
     execute.io.ID_EX_func3 := ID_EX.io.func3_out
     execute.io.ID_EX_rd_sel := ID_EX.io.rd_sel_out
     execute.io.ID_EX_ctrl_MemWr := ID_EX.io.ctrl_MemWr_out
