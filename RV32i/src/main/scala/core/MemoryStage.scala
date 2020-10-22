@@ -229,19 +229,20 @@ class MemoryStage extends Module {
 
   /** ******************************************START****************************************************** */
 
+  io.memAddress := io.EX_MEM_alu_output
   when(io.data_gnt_i && (io.EX_MEM_MemWr===1.U))
   {
     io.data_req_o := true.B
-    io.memAddress := io.EX_MEM_alu_output(13, 0).asSInt
+    //io.memAddress := io.EX_MEM_alu_output(13, 0).asSInt
     io.data_wdata_o := data_wdata
   } .elsewhen(io.data_gnt_i && (io.EX_MEM_MemRd === 1.U)) {
     io.data_req_o := true.B
-    io.memAddress := io.EX_MEM_alu_output(13, 0).asSInt
+    //io.memAddress := io.EX_MEM_alu_output(13, 0).asSInt
     io.data_wdata_o := DontCare
   } .otherwise
     {
       io.data_req_o := false.B
-      io.memAddress := DontCare
+      //io.memAddress := DontCare
       io.data_wdata_o        := DontCare
     }
 
