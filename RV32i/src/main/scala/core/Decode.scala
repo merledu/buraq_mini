@@ -1,7 +1,7 @@
 package core
 
 import chisel3._
-
+/** TODO: rs1 out and rs2 out must be 0 when instruction is lui */
 class Decode extends Module {
   val io = IO(new Bundle {
  //   val enable_M_extension = Input(UInt(1.W))
