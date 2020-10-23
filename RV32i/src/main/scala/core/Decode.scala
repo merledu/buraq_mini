@@ -232,7 +232,7 @@ class Decode extends Module {
   structuralDetector.io.rs2_sel := io.IF_ID_inst(24, 20)
   structuralDetector.io.MEM_WB_REGRD := io.MEM_WB_rd_sel
   structuralDetector.io.MEM_WB_regWr := io.MEM_WB_ctrl_regWr
-
+  structuralDetector.io.inst_op_in := io.IF_ID_inst(6,0)
   // FOR RS1
   when(structuralDetector.io.fwd_rs1 === 1.U) {
     io.rs1_out := reg_file.io.writeData

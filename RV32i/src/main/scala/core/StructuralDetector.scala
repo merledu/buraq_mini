@@ -10,17 +10,19 @@ class StructuralDetector extends Module {
     val rs2_sel = Input(UInt(5.W))
     val MEM_WB_regWr = Input(UInt(1.W))
     val MEM_WB_REGRD = Input(UInt(5.W))
+    val inst_op_in = Input(UInt(7.W))
     val fwd_rs1 = Output(UInt(1.W))
     val fwd_rs2 = Output(UInt(1.W))
   })
 
-  when(io.MEM_WB_regWr === 1.U && io.MEM_WB_REGRD =/= "b00000".U &&  io.MEM_WB_REGRD === io.rs1_sel) {
+  // additionaly checking for the lui opcode 0110111 since it does not have any rs1 or rs2 fields so no hazards can occur
+  when(io.MEM_WB_regWr === 1.U && io.MEM_WB_REGRD =/= "b00000".U &&  io.MEM_WB_REGRD === io.rs1_sel && io.inst_op_in =/= "b0110111".U) {
     io.fwd_rs1 := 1.U
   } .otherwise {
     io.fwd_rs1 := 0.U
   }
 
-  when(io.MEM_WB_regWr === 1.U && io.MEM_WB_REGRD =/= "b00000".U  && io.MEM_WB_REGRD === io.rs2_sel) {
+  when(io.MEM_WB_regWr === 1.U && io.MEM_WB_REGRD =/= "b00000".U  && io.MEM_WB_REGRD === io.rs2_sel && io.inst_op_in =/= "b0110111".U) {
     io.fwd_rs2 := 1.U
   } .otherwise {
     io.fwd_rs2 := 0.U
