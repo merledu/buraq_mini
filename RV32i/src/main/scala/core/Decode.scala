@@ -235,16 +235,22 @@ class Decode extends Module {
   structuralDetector.io.inst_op_in := io.IF_ID_inst(6,0)
   // FOR RS1
   when(structuralDetector.io.fwd_rs1 === 1.U) {
-    io.rs1_out := reg_file.io.writeData
+    // additionally checking if the instruction is lui or not. We should not pass out
+    // any value from the rs1 if lui is currently being decoded since it does not have
+    // an rs1 field in it's encoding
+    io.rs1_out := Mux(io.IF_ID_inst(6,0) =/= "b0110111".U, reg_file.io.writeData, 0.S)
   } .otherwise {
-    io.rs1_out := reg_file.io.rs1
+    io.rs1_out := Mux(io.IF_ID_inst(6,0) =/= "b0110111".U, reg_file.io.rs1, 0.S)
   }
 
   // FOR RS2
   when(structuralDetector.io.fwd_rs2 === 1.U) {
-    io.rs2_out := reg_file.io.writeData
+    // additionally checking if the instruction is lui or not. We should not pass out
+    // any value from the rs2 if lui is currently being decoded since it does not have
+    // an rs2 field in it's encoding
+    io.rs2_out := Mux(io.IF_ID_inst(6,0) =/= "b0110111".U, reg_file.io.writeData, 0.S)
   } .otherwise {
-    io.rs2_out := reg_file.io.rs2
+    io.rs2_out := Mux(io.IF_ID_inst(6,0) =/= "b0110111".U, reg_file.io.rs2, 0.S)
   }
 
   when(control.io.out_extend_sel === "b00".U) {
