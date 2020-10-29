@@ -56,6 +56,7 @@ class Decode extends Module {
     val ctrl_OpB_sel_out = Output(UInt(1.W))
     val ctrl_next_pc_sel_out = Output(UInt(2.W))
     val reg_7_out = Output(SInt(32.W))
+    val mret_inst_o = Output(Bool())
   //  val M_extension_enabled = Output(UInt(1.W))
   })
 
@@ -69,6 +70,8 @@ class Decode extends Module {
   val jalr = Module(new Jalr())
 
 
+  // detecting MRET instruction
+  io.mret_inst_o := Mux(io.IF_ID_inst(14,12) === "b000".U && io.IF_ID_inst(31,20) === "h302".U(12.W), true.B, false.B)
 
   // Initialize Hazard Detection unit
   hazardDetection.io.IF_ID_INST := io.IF_ID_inst
