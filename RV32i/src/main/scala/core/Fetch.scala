@@ -2,14 +2,27 @@ package core
 
 import chisel3._
 import chisel3.util._
+import main.scala.core.csrs.{Exc_Cause}
 
 class Fetch extends Module {
   val io = IO(new Bundle {
-    // instruction meory interface(inputs)
+    // instruction memory interface(inputs)
     val instr_gnt_i = Input(Bool())
     val instr_rvalid_i = Input(Bool()) 
     val instr_rdata_i = Input(UInt(32.W))
-    
+    // csr register file inputs/outputs
+    val irq_pending_i = Input(Bool())   // true when global interrupts are enabled
+    val csr_mstatus_mie = Input(Bool())
+    val csr_mtvec_i = Input(UInt(32.W))
+    val csr_mtvec_init_o = Output(Bool())
+    val csr_save_cause_o = Output(Bool())
+    val csr_save_if_o = Output(Bool())
+    val exc_cause_o = Output(UInt(6.W))
+    val csr_mepc_i = Input(UInt(32.W))
+
+    // sending a "done with bootup" signal so that core can initialize the mtvec register
+    val bootup_done = Input(Bool())
+
     val sb_imm = Input(SInt(32.W))
     val uj_imm = Input(SInt(32.W))
     val jalr_imm = Input(SInt(32.W))
@@ -21,27 +34,42 @@ class Fetch extends Module {
     val hazardDetection_current_pc_out = Input(SInt(32.W))
     val hazardDetection_pc_forward = Input(UInt(1.W))
     val hazardDetection_inst_forward = Input(UInt(1.W))
+
+    // mret instruction decoded in decoded stage
+    val mret_inst_i = Input(Bool())
+
     val stall = Input(Bool())
 
  // instruction memory interface(outputs)
     val instr_addr_o = Output(UInt(32.W))
     val instr_req_o = Output(Bool())
 
-    val pc_out = Output(SInt(32.W))
-    val pc4_out = Output(SInt(32.W))
-    val inst_out = Output(UInt(32.W))
+    val if_id_pc_out = Output(SInt(32.W))
+    val if_id_pc4_out = Output(SInt(32.W))
+    val if_id_inst_out = Output(UInt(32.W))
   })
   val NOP = "b00000000000000000000000000010011".U(32.W) // NOP instruction
 
   val pc = Module(new Pc())
 
-  // IF/ID registers
-  val pc_reg = Reg(SInt())
-  val pc4_reg = Reg(SInt())
-  val inst_reg = RegInit(NOP)
+  // by default setting the save pc in fetch to false.
+  io.csr_save_if_o := false.B
+  io.csr_save_cause_o := false.B
 
-  // This holds the reset value until next clock cycle
-  //val started = RegNext(reset.asBool())
+  // IF/ID registers
+  val if_id_pc_reg = Reg(SInt())
+  val if_id_pc4_reg = Reg(SInt())
+  val if_id_inst_reg = RegInit(NOP)
+
+  // checking if we have an interrupt to deal with
+  val handle_irq = io.irq_pending_i && io.csr_mstatus_mie
+
+  // if irq then stopping the fetch for getting new instruction because we need to jump to the trap handler
+  val halt_if = Wire(Bool())
+  halt_if := Mux(handle_irq, true.B, false.B)
+
+  // initializing the mtvec register when done with booting
+  io.csr_mtvec_init_o := Mux(io.bootup_done, true.B, false.B)
 
   // Send the next pc value to the instruction memory
   io.instr_addr_o := pc.io.in(13,0).asUInt
@@ -50,17 +78,17 @@ class Fetch extends Module {
   // wait for valid signal to arrive indicating the fetched instruction is valid otherwise send NOP
   val instr = Mux(io.instr_rvalid_i, io.instr_rdata_i, NOP)
 
-  when(!io.stall) {
+  when(!io.stall && !halt_if) {
     // send the current pc value to the Decode stage
-    pc_reg := pc.io.out
+    if_id_pc_reg := pc.io.out
     // send the pc + 4 to the Decode stage
-    pc4_reg := pc.io.pc4
+    if_id_pc4_reg := pc.io.pc4
   }
 
-  when(!io.stall) {
+  when(!io.stall && !halt_if) {
     when(io.hazardDetection_inst_forward === 1.U) {
-      inst_reg := io.hazardDetection_inst_out
-      pc_reg := io.hazardDetection_current_pc_out
+      if_id_inst_reg := io.hazardDetection_inst_out
+      if_id_pc_reg := io.hazardDetection_current_pc_out
     } .otherwise {
       // instead of sending the instruction data directly to the decode first see if
       // the reset has been low for one cycle with the `started` val. If `started` is
@@ -68,7 +96,7 @@ class Fetch extends Module {
       // NOP instruction to the Decode otherwise send the received data from the ICCM.
       //    inst_reg := Mux(started, NOP, io.instr_rdata_i)
 
-      inst_reg := instr
+      if_id_inst_reg := instr
 
     }
   }
@@ -82,7 +110,7 @@ class Fetch extends Module {
 //    pc.io.in := pc.io.out
 //    //pc.io.stall := 1.U
 //  } .otherwise {
-  when(!io.stall) {
+  when(!io.stall && !halt_if) {
     when(io.hazardDetection_pc_forward === 1.U) {
       pc.io.in := io.hazardDetection_pc_out
     }.otherwise
@@ -90,33 +118,44 @@ class Fetch extends Module {
       when(io.ctrl_next_pc_sel === "b01".U) {
         when(io.branchLogic_output === 1.U && io.ctrl_out_branch === 1.U) {
           pc.io.in := io.sb_imm
-          pc_reg := 0.S
-          pc4_reg := 0.S
-          inst_reg := NOP
+          if_id_pc_reg := 0.S
+          if_id_pc4_reg := 0.S
+          if_id_inst_reg := NOP
         }.otherwise {
           pc.io.in := pc.io.pc4
         }
       }.elsewhen(io.ctrl_next_pc_sel === "b10".U) {
         pc.io.in := io.uj_imm
-        pc_reg := 0.S
-        pc4_reg := 0.S
-        inst_reg := NOP
+        if_id_pc_reg := 0.S
+        if_id_pc4_reg := 0.S
+        if_id_inst_reg := NOP
       }.elsewhen(io.ctrl_next_pc_sel === "b11".U) {
         pc.io.in := io.jalr_imm
-        pc_reg := 0.S
-        pc4_reg := 0.S
-        inst_reg := NOP
+        if_id_pc_reg := 0.S
+        if_id_pc4_reg := 0.S
+        if_id_inst_reg := NOP
+      } .elsewhen(io.mret_inst_i) {
+        pc.io.in := io.csr_mepc_i
+        if_id_pc_reg := 0.S
+        if_id_pc4_reg := 0.S
+        if_id_inst_reg := NOP
       }.otherwise {
         pc.io.in := pc.io.pc4
       }
     }
-  } .otherwise {
+  } .elsewhen(!io.stall && halt_if) {
+    pc.io.in := Cat(io.csr_mtvec_i(31,8), 0.U(1.W), Exc_Cause.EXC_CAUSE_IRQ_EXTERNAL_M(4,0), 0.U(2.W))
+    io.csr_save_if_o := true.B
+    io.csr_save_cause_o := true.B
+    io.exc_cause_o := Exc_Cause.EXC_CAUSE_IRQ_EXTERNAL_M
+  }
+    .otherwise {
     pc.io.in := pc.io.out
   }
 
 
 
-  io.pc_out := pc_reg
-  io.pc4_out:=  pc4_reg
-  io.inst_out := inst_reg
+  io.if_id_pc_out := if_id_pc_reg
+  io.if_id_pc4_out:=  if_id_pc4_reg
+  io.if_id_inst_out := if_id_inst_reg
 }
