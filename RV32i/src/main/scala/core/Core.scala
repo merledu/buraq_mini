@@ -44,6 +44,7 @@ class Core extends Module {
 
 
     // *********** ----------- INSTRUCTION FETCH (IF) STAGE ----------- ********* //
+    fetch.io.bootup_done := !io.stall_core_i
     fetch.io.stall := stall
     // instruction memory bus connections(inputs)
     fetch.io.instr_gnt_i := io.instr_gnt_i
@@ -73,9 +74,9 @@ class Core extends Module {
     io.instr_addr_o:= fetch.io.instr_addr_o
     // *********** ----------- INSTRUCTION DECODE (ID) STAGE ----------- ********* //
 
-    decode.io.IF_ID_inst := fetch.io.inst_out
-    decode.io.IF_ID_pc := fetch.io.pc_out
-    decode.io.IF_ID_pc4 := fetch.io.pc4_out
+    decode.io.IF_ID_inst := fetch.io.if_id_inst_out
+    decode.io.IF_ID_pc := fetch.io.if_id_pc_out
+    decode.io.IF_ID_pc4 := fetch.io.if_id_pc4_out
     decode.io.MEM_WB_ctrl_regWr := MEM_WB.io.ctrl_RegWr_out
     decode.io.MEM_WB_rd_sel := MEM_WB.io.rd_sel_out
     decode.io.ID_EX_ctrl_MemRd := ID_EX.io.ctrl_MemRd_out
