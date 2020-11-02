@@ -151,8 +151,9 @@ class Fetch extends Module {
     }
   } .elsewhen(!io.stall && halt_if) {
     pc.io.in := Cat(io.csr_mtvec_i(31,8), 0.U(1.W), Exc_Cause.EXC_CAUSE_IRQ_EXTERNAL_M(4,0), 0.U(2.W)).asSInt()
+    if_id_inst_reg := NOP // when halted pass NOP since we dont want to repeatedly send the current instruction as it will be executed twice
     io.csr_save_if_o := true.B
-    io.csr_if_pc_o := pc.io.in.asUInt()
+    io.csr_if_pc_o := pc.io.out.asUInt()
     io.csr_save_cause_o := true.B
     io.exc_cause_o := Exc_Cause.EXC_CAUSE_IRQ_EXTERNAL_M
   }
