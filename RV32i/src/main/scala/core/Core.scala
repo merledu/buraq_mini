@@ -51,7 +51,13 @@ class Core extends Module {
     fetch.io.instr_rvalid_i := io.instr_rvalid_i
     fetch.io.instr_rdata_i := io.instr_rdata_i
 
-    fetch.io.instr_rdata_i := io.instr_rdata_i
+    // csr connections
+    fetch.io.irq_pending_i := false.B
+    fetch.io.csr_mstatus_mie := false.B
+    fetch.io.csr_mtvec_i := 0.U
+    fetch.io.csr_mepc_i := 0.U
+    fetch.io.mret_inst_i := false.B
+
     fetch.io.sb_imm := decode.io.sb_imm
     fetch.io.uj_imm := decode.io.uj_imm
     fetch.io.jalr_imm := decode.io.jalr_output
