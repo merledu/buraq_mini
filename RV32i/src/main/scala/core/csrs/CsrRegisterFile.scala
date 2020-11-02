@@ -553,19 +553,21 @@ class CsrRegisterFile extends Module {
         mcause_en      := "b1".U
         mcause_d       := io.i_csr_mcause
       }
-      .elsewhen(io.i_csr_restore_dret) // DRET
-      {
-        priv_lvl_d.asUInt := dcsr_q.prv
-      }
-      .elsewhen(io.i_csr_restore_mret) // MRET
-      {
-        priv_lvl_d.asUInt  := mstatus_q.mpp
-        mstatus_en     := "b1".U
-        mstatus_d.mie  := mstatus_q.mpie
-        mstatus_d.mpie := "b1".U
-        mstatus_d.mpp  := priv_lvl_e.PRIV_LVL_M.asUInt
-      }
-  }
+
+  } // end save_cause
+
+    when(io.i_csr_restore_dret) // DRET
+    {
+      priv_lvl_d.asUInt := dcsr_q.prv
+    }
+    when(io.i_csr_restore_mret) // MRET
+    {
+      priv_lvl_d.asUInt  := mstatus_q.mpp
+      mstatus_en     := "b1".U
+      mstatus_d.mie  := mstatus_q.mpie
+      mstatus_d.mpie := "b1".U
+      mstatus_d.mpp  := priv_lvl_e.PRIV_LVL_M.asUInt
+    }
   // updating current priv-level
 
   when(reset.asBool())
