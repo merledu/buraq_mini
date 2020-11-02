@@ -643,7 +643,7 @@ class CsrRegisterFile extends Module {
 
   // MSTATUS
   // val error = Wire(Bool())
-  val MSTATUS_RST_VAL = 0x1c
+  val MSTATUS_RST_VAL = 0x0d  // this makes mie -> 1, mpie -> 0, mpp -> 11(M mode), tw -> 0
 
   val PRIM_MSTATUS = Module(new CsrPrimitive(st.getWidth, false, MSTATUS_RST_VAL))
   PRIM_MSTATUS.io.i_wrdata := mstatus_d.asUInt
