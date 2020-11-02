@@ -71,6 +71,10 @@ class Fetch extends Module {
   // initializing the mtvec register when done with booting
   io.csr_mtvec_init_o := Mux(io.bootup_done, true.B, false.B)
 
+  // csr register file default outputs
+  io.csr_save_if_o := false.B
+  io.csr_save_cause_o := false.B
+  io.exc_cause_o := Exc_Cause.EXC_CAUSE_INSN_ADDR_MISA
   // Send the next pc value to the instruction memory
   io.instr_addr_o := pc.io.in(13,0).asUInt
   // if device is ready to accept the request then send a valid signal to fetch from.
@@ -135,7 +139,7 @@ class Fetch extends Module {
         if_id_pc4_reg := 0.S
         if_id_inst_reg := NOP
       } .elsewhen(io.mret_inst_i) {
-        pc.io.in := io.csr_mepc_i
+        pc.io.in := io.csr_mepc_i.asSInt()
         if_id_pc_reg := 0.S
         if_id_pc4_reg := 0.S
         if_id_inst_reg := NOP
@@ -144,7 +148,7 @@ class Fetch extends Module {
       }
     }
   } .elsewhen(!io.stall && halt_if) {
-    pc.io.in := Cat(io.csr_mtvec_i(31,8), 0.U(1.W), Exc_Cause.EXC_CAUSE_IRQ_EXTERNAL_M(4,0), 0.U(2.W))
+    pc.io.in := Cat(io.csr_mtvec_i(31,8), 0.U(1.W), Exc_Cause.EXC_CAUSE_IRQ_EXTERNAL_M(4,0), 0.U(2.W)).asSInt()
     io.csr_save_if_o := true.B
     io.csr_save_cause_o := true.B
     io.exc_cause_o := Exc_Cause.EXC_CAUSE_IRQ_EXTERNAL_M
