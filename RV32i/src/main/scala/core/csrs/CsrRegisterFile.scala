@@ -634,8 +634,8 @@ class CsrRegisterFile extends Module {
 
   // Qualify incoming interrupt requests in mip CSR with mie CSR for controller and to re-enable
   // clock upon WFI (must be purely combinational).
-  io.o_irqs := mip.asUInt & mie_q.asUInt
-  io.o_irq_pending := (io.o_irqs.asUInt).orR
+  io.o_irqs := Cat(Mux((mip.irq_external && mie_q.irq_external) === true.B, 1.U(1.W), 0.U(1.W)), Mux((mip.irq_timer && mie_q.irq_timer) === true.B, 1.U(1.W), 0.U(1.W)), Mux((mip.irq_software && mie_q.irq_software) === true.B, 1.U(1.W), 0.U(1.W)))
+  io.o_irq_pending := (io.o_irqs).orR
 
   //////////////////////////Save
   // CSR instantisaaation //
@@ -662,7 +662,7 @@ class CsrRegisterFile extends Module {
   mie_d.irq_timer     := csr_wdata_int(MIX_BITS.MTIX)
   mie_d.irq_external  := csr_wdata_int(MIX_BITS.MEIX)
 
-  val PRIM_MIE = Module(new CsrPrimitive(3, false, 0))
+  val PRIM_MIE = Module(new CsrPrimitive(3, false, 4))
   PRIM_MIE.io.i_wrdata := mie_d.asUInt
   PRIM_MIE.io.i_wr_en   := mie_en
   mie_q  := PRIM_MIE.io.o_rd_data.asTypeOf(new irqs_t())
