@@ -14,15 +14,17 @@ import chisel3.experimental.ChiselEnum
 // and NMI at highest prioritySave
 class irqs_t extends Bundle{
   // the wires declared here are in reverse order.
-  // Generally according to the structure of the MIE register,
+  // Generally according to the structure of the MIE register,  _____________________
+  //                                                           | MEIE | MTIE | MSIE |
+  //                                                            --------------------
   // the irq_software should come first,
   // the irq_timer should come second,
   // the irq_external should come last
   // BUT, the asTypeOf(new irqs_t()) inverts this order (VERIFIED ON SCASTIE)
   // i.e  if this bundle is given value 1.U,
   // the LSB bit would be given to the last wire declared in this bundle
-  // this causes writing 1.U to the MIE register for enabling irq_software,
-  // to actually enable irq_external since it would be the last declared wire
+  // this causes writing 1.U to the MSIE for enabling irq_software,
+  // to actually enable irq_external MEIE since it would be the last declared wire
   // which would be wrong functionality, hence changing the order of the bundle
   val irq_external        = Bool()
   val irq_timer           = Bool()
@@ -52,11 +54,38 @@ class csr_op_e extends Bundle{
 // 5) tw: time out wait supports intercepting the WFI(wait for interrupt) instruction
 
 class status_t extends Bundle{
-  val mie        = Bool()
-  val mpie       = Bool()
-  val mpp        = UInt(2.W)
-  val mprv       = Bool()
-  val tw         = Bool()
+  // the wires declared here are in reverse order.
+  // Generally according to the structure of the MSTATUS register,
+  //
+  // ________________________________
+  // | TW | MPRV | MPP | MPIE | MIE |
+  // --------------------------------
+  //
+  // the mie should come first,
+  // the mpie should come second,
+  // the mpp should come third,
+  // the mprv should come fourth,
+  // the tw should come fifth,
+
+  // BUT, the asTypeOf(new mstatus_t()) inverts this order (VERIFIED ON SCASTIE)
+  // i.e  if this bundle is given value 1.U,
+  // the LSB bit would be given to the last wire declared in this bundle
+  // this causes writing 1.U to the MIE for enabling global interrupts,
+  // to actually enable timeout wait TW since it would be the last declared wire
+  // which would be wrong functionality, hence changing the order of the bundle
+  // BEFORE
+  //  val mie        = Bool()
+  //  val mpie       = Bool()
+  //  val mpp        = UInt(2.W)
+  //  val mprv       = Bool()
+  //  val tw         = Bool()
+  // NOW
+  val tw = Bool()
+  val mprv = Bool()
+  val mpp = UInt(2.W)
+  val mpie = Bool()
+  val mie = Bool()
+
 }
 
 // bit fields of "dcsr"
