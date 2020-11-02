@@ -13,9 +13,20 @@ import chisel3.experimental.ChiselEnum
 // 2) UART
 // and NMI at highest prioritySave
 class irqs_t extends Bundle{
-  val irq_software        = Bool()
-  val irq_timer           = Bool()
+  // the wires declared here are in reverse order.
+  // Generally according to the structure of the MIE register,
+  // the irq_software should come first,
+  // the irq_timer should come second,
+  // the irq_external should come last
+  // BUT, the asTypeOf(new irqs_t()) inverts this order (VERIFIED ON SCASTIE)
+  // i.e  if this bundle is given value 1.U,
+  // the LSB bit would be given to the last wire declared in this bundle
+  // this causes writing 1.U to the MIE register for enabling irq_software,
+  // to actually enable irq_external since it would be the last declared wire
+  // which would be wrong functionality, hence changing the order of the bundle
   val irq_external        = Bool()
+  val irq_timer           = Bool()
+  val irq_software        = Bool()
 }
 
 // csr operations
