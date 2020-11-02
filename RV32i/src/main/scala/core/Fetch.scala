@@ -17,6 +17,7 @@ class Fetch extends Module {
     val csr_mtvec_init_o = Output(Bool())
     val csr_save_cause_o = Output(Bool())
     val csr_save_if_o = Output(Bool())
+    val csr_if_pc_o = Output(UInt(32.W))
     val exc_cause_o = Output(UInt(6.W))
     val csr_mepc_i = Input(UInt(32.W))
 
@@ -54,6 +55,7 @@ class Fetch extends Module {
 
   // by default setting the save pc in fetch to false.
   io.csr_save_if_o := false.B
+  io.csr_if_pc_o := 0.U
   io.csr_save_cause_o := false.B
 
   // IF/ID registers
@@ -150,6 +152,7 @@ class Fetch extends Module {
   } .elsewhen(!io.stall && halt_if) {
     pc.io.in := Cat(io.csr_mtvec_i(31,8), 0.U(1.W), Exc_Cause.EXC_CAUSE_IRQ_EXTERNAL_M(4,0), 0.U(2.W)).asSInt()
     io.csr_save_if_o := true.B
+    io.csr_if_pc_o := pc.io.in.asUInt()
     io.csr_save_cause_o := true.B
     io.exc_cause_o := Exc_Cause.EXC_CAUSE_IRQ_EXTERNAL_M
   }
