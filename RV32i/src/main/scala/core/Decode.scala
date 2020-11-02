@@ -71,7 +71,7 @@ class Decode extends Module {
 
 
   // detecting MRET instruction
-  io.mret_inst_o := Mux(io.IF_ID_inst(14,12) === "b000".U && io.IF_ID_inst(31,20) === "h302".U(12.W), true.B, false.B)
+  io.mret_inst_o := Mux(io.IF_ID_inst(6,0) === "h73".U && io.IF_ID_inst(14,12) === "b000".U && io.IF_ID_inst(31,20) === "h302".U(12.W), true.B, false.B)
 
   // Initialize Hazard Detection unit
   hazardDetection.io.IF_ID_INST := io.IF_ID_inst
