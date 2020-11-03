@@ -153,7 +153,12 @@ class Fetch extends Module {
     pc.io.in := Cat(io.csr_mtvec_i(31,8), 0.U(1.W), Exc_Cause.EXC_CAUSE_IRQ_EXTERNAL_M(4,0), 0.U(2.W)).asSInt()
     if_id_inst_reg := NOP // when halted pass NOP since we dont want to repeatedly send the current instruction as it will be executed twice
     io.csr_save_if_o := true.B
-    io.csr_if_pc_o := pc.io.out.asUInt()
+    // Checking which pc to set in mepc. If the pc in had a branch instruction when interrupt came
+    // then save the calculated branch addres in mepc to return back to correct instruction after mret
+    // otherwise save pc's current value in mepc.
+    io.csr_if_pc_o := Mux(io.ctrl_next_pc_sel === "b01".U, io.sb_imm.asUInt(),
+                      Mux(io.ctrl_next_pc_sel === "b10".U, io.uj_imm.asUInt(),
+                      Mux(io.ctrl_next_pc_sel === "b11".U, io.jalr_imm.asUInt(), pc.io.out.asUInt())))
     io.csr_save_cause_o := true.B
     io.exc_cause_o := Exc_Cause.EXC_CAUSE_IRQ_EXTERNAL_M
   }
