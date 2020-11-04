@@ -82,7 +82,7 @@ class Core extends Module {
   // *********** ----------- CSR REGISTER FILE ----------- ********* //
   csrRegFile.io.i_hart_id                       :=      0.U
   csrRegFile.io.i_boot_addr                     :=      0.U
-  csrRegFile.io.i_csr_mtvec_init                :=      fetch.io.csr_mtvec_init_o
+  csrRegFile.io.i_csr_mtvec_init                :=      fetch.io.csrRegFile_csr_mtvec_init_o
   csrRegFile.io.i_csr_access                    :=      false.B
   csrRegFile.io.i_csr_wdata                     :=      0.U
   csrRegFile.io.i_csr_op                        :=      0.U
@@ -92,16 +92,16 @@ class Core extends Module {
   csrRegFile.io.i_irq_timer                     :=      false.B
   csrRegFile.io.i_irq_external                  :=      io.irq_external_i
   csrRegFile.io.i_nmi_mode                      :=      false.B
-  csrRegFile.io.i_pc_if                         :=      fetch.io.csr_if_pc_o
+  csrRegFile.io.i_pc_if                         :=      fetch.io.csrRegFile_csr_if_pc_o
   csrRegFile.io.i_pc_id                         :=      0.U
   csrRegFile.io.i_pc_wb                         :=      0.U
-  csrRegFile.io.i_csr_save_if                   :=      fetch.io.csr_save_if_o
+  csrRegFile.io.i_csr_save_if                   :=      fetch.io.csrRegFile_csr_save_if_o
   csrRegFile.io.i_csr_save_id                   :=      false.B
   csrRegFile.io.i_csr_save_wb                   :=      false.B
   csrRegFile.io.i_csr_restore_mret              :=      decode.io.mret_inst_o
   csrRegFile.io.i_csr_restore_dret              :=      false.B
-  csrRegFile.io.i_csr_mcause                    :=      fetch.io.exc_cause_o
-  csrRegFile.io.i_csr_save_cause                :=      fetch.io.csr_save_cause_o
+  csrRegFile.io.i_csr_mcause                    :=      fetch.io.csrRegFile_exc_cause_o
+  csrRegFile.io.i_csr_save_cause                :=      fetch.io.csrRegFile_csr_save_cause_o
   csrRegFile.io.i_csr_mtval                     :=      0.U
   csrRegFile.io.i_instr_ret                     :=      false.B
   csrRegFile.io.i_iside_wait                    :=      false.B
@@ -115,41 +115,41 @@ class Core extends Module {
   csrRegFile.io.i_debug_cause                   :=      0.U
   csrRegFile.io.i_debug_csr_save                :=      false.B
   // *********** ----------- INSTRUCTION FETCH (IF) STAGE ----------- ********* //
-  fetch.io.bootup_done                          :=      !io.stall_core_i
-  fetch.io.stall                                :=      stall
+  fetch.io.core_init_mtvec_i                          :=      !io.stall_core_i
+  fetch.io.core_stall_i                                :=      stall
   // instruction memory bus connections(inputs)
-  fetch.io.instr_gnt_i                          :=      io.instr_gnt_i
-  fetch.io.instr_rvalid_i                       :=      io.instr_rvalid_i
-  fetch.io.instr_rdata_i                        :=      io.instr_rdata_i
+  fetch.io.core_instr_gnt_i                          :=      io.instr_gnt_i
+  fetch.io.core_instr_rvalid_i                       :=      io.instr_rvalid_i
+  fetch.io.core_instr_rdata_i                        :=      io.instr_rdata_i
 
   // csr connections
-  fetch.io.irq_pending_i                        :=      csrRegFile.io.o_irq_pending
-  fetch.io.csr_mstatus_mie                      :=      csrRegFile.io.o_csr_mstatus_mie
-  fetch.io.csr_mtvec_i                          :=      csrRegFile.io.o_csr_mtvec
-  fetch.io.csr_mepc_i                           :=      csrRegFile.io.o_csr_mepc
-  fetch.io.mret_inst_i                          :=      decode.io.mret_inst_o
+  fetch.io.csrRegFile_irq_pending_i                        :=      csrRegFile.io.o_irq_pending
+  fetch.io.csrRegFile_csr_mstatus_mie_i                      :=      csrRegFile.io.o_csr_mstatus_mie
+  fetch.io.csrRegFile_csr_mtvec_i                          :=      csrRegFile.io.o_csr_mtvec
+  fetch.io.csrRegFile_csr_mepc_i                           :=      csrRegFile.io.o_csr_mepc
+  fetch.io.decode_mret_inst_i                          :=      decode.io.mret_inst_o
 
-  fetch.io.sb_imm                               :=      decode.io.sb_imm
-  fetch.io.uj_imm                               :=      decode.io.uj_imm
-  fetch.io.jalr_imm                             :=      decode.io.jalr_output
-  fetch.io.ctrl_next_pc_sel                     :=      decode.io.ctrl_next_pc_sel_out
-  fetch.io.ctrl_out_branch                      :=      decode.io.ctrl_Branch_out
-  fetch.io.branchLogic_output                   :=      decode.io.branchLogic_output
-  fetch.io.hazardDetection_pc_out               :=      decode.io.hazardDetection_pc_out
-  fetch.io.hazardDetection_inst_out             :=      decode.io.hazardDetection_inst_out
-  fetch.io.hazardDetection_current_pc_out       :=      decode.io.hazardDetection_current_pc_out
-  fetch.io.hazardDetection_pc_forward           :=      decode.io.hazardDetection_pc_forward
-  fetch.io.hazardDetection_inst_forward         :=      decode.io.hazardDetection_inst_forward
+  fetch.io.decode_sb_imm_i                               :=      decode.io.sb_imm
+  fetch.io.decode_uj_imm_i                               :=      decode.io.uj_imm
+  fetch.io.decode_jalr_imm_i                             :=      decode.io.jalr_output
+  fetch.io.decode_ctrl_next_pc_sel_i                     :=      decode.io.ctrl_next_pc_sel_out
+  fetch.io.decode_ctrl_out_branch_i                      :=      decode.io.ctrl_Branch_out
+  fetch.io.decode_branchLogic_output_i                   :=      decode.io.branchLogic_output
+  fetch.io.decode_hazardDetection_pc_i               :=      decode.io.hazardDetection_pc_out
+  fetch.io.decode_hazardDetection_inst_i             :=      decode.io.hazardDetection_inst_out
+  fetch.io.decode_hazardDetection_current_pc_i       :=      decode.io.hazardDetection_current_pc_out
+  fetch.io.decode_hazardDetection_pc_forward_i           :=      decode.io.hazardDetection_pc_forward
+  fetch.io.decode_hazardDetection_inst_forward_i         :=      decode.io.hazardDetection_inst_forward
 
 
   //instruction memory bus connections(outputs)
-  io.instr_req_o                                :=      fetch.io.instr_req_o
-  io.instr_addr_o                               :=      fetch.io.instr_addr_o
+  io.instr_req_o                                :=      fetch.io.core_instr_req_o
+  io.instr_addr_o                               :=      fetch.io.core_instr_addr_o
   // *********** ----------- INSTRUCTION DECODE (ID) STAGE ----------- ********* //
 
-  decode.io.IF_ID_inst                          :=      fetch.io.if_id_inst_out
-  decode.io.IF_ID_pc                            :=      fetch.io.if_id_pc_out
-  decode.io.IF_ID_pc4                           :=      fetch.io.if_id_pc4_out
+  decode.io.IF_ID_inst                          :=      fetch.io.decode_if_id_inst_o
+  decode.io.IF_ID_pc                            :=      fetch.io.decode_if_id_pc_o
+  decode.io.IF_ID_pc4                           :=      fetch.io.decode_if_id_pc4_o
   decode.io.MEM_WB_ctrl_regWr                   :=      MEM_WB.io.ctrl_RegWr_out
   decode.io.MEM_WB_rd_sel                       :=      MEM_WB.io.rd_sel_out
   decode.io.ID_EX_ctrl_MemRd                    :=      ID_EX.io.ctrl_MemRd_out
