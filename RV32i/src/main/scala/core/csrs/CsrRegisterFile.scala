@@ -174,6 +174,13 @@ class CsrRegisterFile extends Module {
   unused_csr_addr := csr_addr(7,5)
   mhpmcounter_idx := csr_addr(4,0)
 
+  mstatus_en := "b0".U
+  mstatus_d.mie  := mstatus_q.mie
+  mstatus_d.mpie := mstatus_q.mpie
+  mstatus_d.mpp  := mstatus_q.mpp
+  mstatus_d.mprv := mstatus_q.mprv
+  mstatus_d.tw   := mstatus_q.tw
+
   // The standard RISC-V ISA sets aside a 12-bit encoding space (csr[11:0]) for up to 4,096 CSRs.
   // By convention, the upper 4 bits of the CSR address (csr[11:8]) are used to encode the read and
   // write accessibility of the CSRs according to privilege level. The top two bits
@@ -377,21 +384,15 @@ class CsrRegisterFile extends Module {
   // mtatus interrupt enable bits
   when(csr_we_int & (io.i_csr_addr === CsrAddressMap.MSTATUS))
   {
-    //mstatus_en := "b1".U
-
-    when(mstat_priv)
+    mstatus_en := "b1".U
+    mstatus_d.mie  := csr_wdata_int(MSTAT_BITS.MIE)
+    mstatus_d.mpie := csr_wdata_int(MSTAT_BITS.MPIE)
+    mstatus_d.mpp  := csr_wdata_int(MSTAT_BITS.MPP_HIGH, MSTAT_BITS.MPP_LOW)
+    mstatus_d.tw   := csr_wdata_int(MSTAT_BITS.TW)
+    when((mstatus_q.mpp.asUInt =/= priv_lvl_e.PRIV_LVL_M.asUInt) && (mstatus_q.mpp.asUInt =/= priv_lvl_e.PRIV_LVL_U.asUInt))
     {
-      mstatus_en := "b0".U
       mstatus_d.mpp := priv_lvl_e.PRIV_LVL_M.asUInt
     }
-      .otherwise
-      {
-        mstatus_en := "b1".U
-        mstatus_d.mie  := csr_wdata_int(MSTAT_BITS.MIE)
-        mstatus_d.mpie := csr_wdata_int(MSTAT_BITS.MPIE)
-        mstatus_d.mpp  := csr_wdata_int(MSTAT_BITS.MPP_HIGH, MSTAT_BITS.MPP_LOW)
-        mstatus_d.tw   := csr_wdata_int(MSTAT_BITS.TW)
-      }
   }
     // interrupt enable
     .elsewhen(csr_we_int & (io.i_csr_addr === CsrAddressMap.MIE))
@@ -472,12 +473,8 @@ class CsrRegisterFile extends Module {
       mhpmcounterh_we := "b1".U << mhpmcounter_idx
     }
   priv_lvl_d := priv_lvl_q.asUInt
-  mstatus_en := "b0".U
-  mstatus_d.mie  := mstatus_q.mie
-  mstatus_d.mpie := mstatus_q.mpie
-  mstatus_d.mpp  := mstatus_q.mpp
-  mstatus_d.mprv := mstatus_q.mprv
-  mstatus_d.tw   := mstatus_q.tw
+
+
   mie_en     := "b0".U
   mscratch_en:= "b0".U
   mepc_en    := "b0".U
