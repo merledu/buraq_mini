@@ -52,4 +52,5 @@ class ALU_operations_Sel(func3 : UInt, func7 : UInt, AluOp : UInt)
      def DIVU   : Bool  = { func3 === "b101".U  && AluOp==="b1001".U  && func7 === "b0000001".U}
      def REM    : Bool  = { func3 === "b110".U  && AluOp==="b1001".U  && func7 === "b0000001".U}
      def REMU   : Bool  = { func3 === "b111".U  && AluOp==="b1001".U  && func7 === "b0000001".U}
+     def CSRRW  : Bool  = { func3 === "b001".U  && AluOp==="b1000".U}
 }
