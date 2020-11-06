@@ -92,6 +92,7 @@ class Decode extends Module {
   control.io.in_opcode := io.IF_ID_inst(6, 0)
  // control.io.enable_M_extension := io.enable_M_extension // M extension
   control.io.func7      := io.IF_ID_inst(31,25)
+  control.io.func3      := io.IF_ID_inst(14,12)
 
   // Initialize Decode Forward Unit
   decodeForwardUnit.io.ID_EX_REGRD := io.ID_EX_rd_sel
