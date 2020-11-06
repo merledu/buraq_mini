@@ -6,6 +6,7 @@ class Control extends Module {
     val io = IO(new Bundle {
         val in_opcode = Input(UInt(7.W))
         val func7     = Input(UInt(7.W))
+        val func3     = Input(UInt(3.W))
       //  val enable_M_extension = Input(UInt(1.W))
         val out_memWrite = Output(UInt(1.W))
         val out_branch = Output(UInt(1.W))
@@ -22,6 +23,7 @@ class Control extends Module {
     val instruction_type_decode = Module(new InstructionTypeDecode())
     val control_decode = Module(new ControlDecode())
     instruction_type_decode.io.opcode := io.in_opcode
+    instruction_type_decode.io.func3  := io.func3
     control_decode.io.in_r_type := instruction_type_decode.io.r_type
     control_decode.io.in_load_type := instruction_type_decode.io.load_type
     control_decode.io.in_s_type := instruction_type_decode.io.s_type
