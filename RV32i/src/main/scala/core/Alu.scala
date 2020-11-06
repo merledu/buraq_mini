@@ -93,7 +93,7 @@ class Alu extends Module {
             io.output := 0.S
         }
     } .elsewhen(io.aluCtrl === "b11111".U) {
-        // JALR/JAL
+        // JALR/JAL/CSRRW
         io.output := io.oper_a
     }
     .elsewhen(io.aluCtrl === 11.U)
