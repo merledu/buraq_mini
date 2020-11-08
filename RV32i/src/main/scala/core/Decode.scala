@@ -1,14 +1,17 @@
 package core
 
 import chisel3._
+import main.scala.core.csrs.CsrRegisterFile
 /** TODO: rs1 out and rs2 out must be 0 when instruction is lui */
 class Decode extends Module {
   val io = IO(new Bundle {
  //   val enable_M_extension = Input(UInt(1.W))
+    val irq_external_i = Input(Bool())
     val IF_ID_inst = Input(UInt(32.W))
     val IF_ID_pc = Input(SInt(32.W))
     val IF_ID_pc4 = Input(SInt(32.W))
     val MEM_WB_ctrl_regWr = Input(UInt(1.W))
+    val MEM_WB_ctrl_csrWen = Input(Bool())
     val MEM_WB_rd_sel = Input(UInt(5.W))
     val ID_EX_ctrl_MemRd = Input(UInt(1.W))
     val ID_EX_rd_sel = Input(UInt(5.W))
@@ -18,8 +21,16 @@ class Decode extends Module {
     val alu_output = Input(SInt(32.W))
     val EX_MEM_alu_output = Input(SInt(32.W))
     val dmem_memOut = Input(SInt(32.W))
-    val writeback_write_data = Input(SInt(32.W))
+    val writeback_write_data = Input(SInt(32.W))    // rs1 data coming from write back
+    val MEM_WB_csrAddr = Input(UInt(12.W))
+    val MEM_WB_csr_op = Input(UInt(2.W))
+    val MEM_WB_csr_rdata = Input(UInt(32.W))        // csr data coming from MEM_WB
 
+    val fetch_csr_mtvec_init = Input(Bool())
+    val fetch_csr_if_pc = Input(UInt(32.W))
+    val fetch_csr_save_if = Input(Bool())
+    val fetch_exc_cause_i = Input(UInt(6.W))
+    val fetch_csr_save_cause_i = Input(Bool())
     val execute_regwrite = Input(UInt(1.W))
     val mem_regwrite     = Input(UInt(1.W))
     val wb_regwrite      = Input(UInt(1.W))
@@ -36,6 +47,7 @@ class Decode extends Module {
     val rs2_sel_out = Output(UInt(5.W))
     val rs1_out = Output(SInt(32.W))
     val rs2_out = Output(SInt(32.W))
+    val csr_rdata_o = Output(UInt(32.W))
     val imm_out = Output(SInt(32.W))
     val sb_imm = Output(SInt(32.W))
     val uj_imm = Output(SInt(32.W))
@@ -50,13 +62,21 @@ class Decode extends Module {
     val ctrl_MemRd_out = Output(UInt(1.W))
     val ctrl_Branch_out = Output(UInt(1.W))
     val ctrl_RegWr_out = Output(UInt(1.W))
+    val ctrl_CsrWen_out = Output(Bool())
     val ctrl_MemToReg_out = Output(UInt(1.W))
     val ctrl_AluOp_out = Output(UInt(4.W))
     val ctrl_OpA_sel_out = Output(UInt(2.W))
     val ctrl_OpB_sel_out = Output(UInt(1.W))
     val ctrl_next_pc_sel_out = Output(UInt(2.W))
     val reg_7_out = Output(SInt(32.W))
-    val mret_inst_o = Output(Bool())
+    //val mret_inst_o = Output(Bool())
+    val csr_op_o = Output(UInt(2.W))
+    val fwd_csr_o = Output(Bool())
+    val fetch_irq_pending_o = Output(Bool())
+    val fetch_csr_mstatus_mie_o = Output(Bool())
+    val fetch_csr_mtvec_o = Output(UInt(32.W))
+    val fetch_csr_mepc_o = Output(UInt(32.W))
+    val fetch_mret_inst_o = Output(Bool())
   //  val M_extension_enabled = Output(UInt(1.W))
   })
 
@@ -68,10 +88,55 @@ class Decode extends Module {
   val imm_generation = Module(new ImmediateGeneration())
   val structuralDetector = Module(new StructuralDetector())
   val jalr = Module(new Jalr())
+  val csrRegFile       =      Module(new CsrRegisterFile())
 
 
+  val imm_out = Wire(SInt(32.W))
+  val mret_inst = Wire(Bool())
   // detecting MRET instruction
-  io.mret_inst_o := Mux(io.IF_ID_inst(6,0) === "h73".U && io.IF_ID_inst(14,12) === "b000".U && io.IF_ID_inst(31,20) === "h302".U(12.W), true.B, false.B)
+  mret_inst := Mux(io.IF_ID_inst(6,0) === "h73".U && io.IF_ID_inst(14,12) === "b000".U && io.IF_ID_inst(31,20) === "h302".U(12.W), true.B, false.B)
+
+  // CSR Register file
+  csrRegFile.io.i_hart_id                       :=      0.U
+  csrRegFile.io.i_boot_addr                     :=      0.U
+  csrRegFile.io.i_csr_mtvec_init                :=      io.fetch_csr_mtvec_init
+  csrRegFile.io.i_csr_access                    :=      io.MEM_WB_ctrl_csrWen
+  csrRegFile.io.i_csr_wdata                     :=      io.writeback_write_data.asUInt()  // data from rs1
+  csrRegFile.io.i_csr_op                        :=      io.MEM_WB_csr_op
+  csrRegFile.io.i_csr_op_en                     :=      io.MEM_WB_ctrl_csrWen   // right now the operation enables when csr instruction is in writeback stage
+  csrRegFile.io.i_csr_addr                      :=      Mux(io.MEM_WB_ctrl_csrWen, io.MEM_WB_csrAddr, io.IF_ID_inst(31,20)) // if instruction in wb stage wants to write use that address else use the current imm value to read the csr
+  csrRegFile.io.i_irq_software                  :=      false.B
+  csrRegFile.io.i_irq_timer                     :=      false.B
+  csrRegFile.io.i_irq_external                  :=      io.irq_external_i
+  csrRegFile.io.i_nmi_mode                      :=      false.B
+  csrRegFile.io.i_pc_if                         :=      io.fetch_csr_if_pc
+  csrRegFile.io.i_pc_id                         :=      0.U
+  csrRegFile.io.i_pc_wb                         :=      0.U
+  csrRegFile.io.i_csr_save_if                   :=      io.fetch_csr_save_if
+  csrRegFile.io.i_csr_save_id                   :=      false.B
+  csrRegFile.io.i_csr_save_wb                   :=      false.B
+  csrRegFile.io.i_csr_restore_mret              :=      mret_inst
+  csrRegFile.io.i_csr_restore_dret              :=      false.B
+  csrRegFile.io.i_csr_mcause                    :=      io.fetch_exc_cause_i
+  csrRegFile.io.i_csr_save_cause                :=      io.fetch_csr_save_cause_i
+  csrRegFile.io.i_csr_mtval                     :=      0.U
+  csrRegFile.io.i_instr_ret                     :=      false.B
+  csrRegFile.io.i_iside_wait                    :=      false.B
+  csrRegFile.io.i_jump                          :=      false.B
+  csrRegFile.io.i_branch                        :=      false.B
+  csrRegFile.io.i_branch_taken                  :=      false.B
+  csrRegFile.io.i_mem_load                      :=      false.B
+  csrRegFile.io.i_mem_store                     :=      false.B
+  csrRegFile.io.i_dside_wait                    :=      false.B
+  csrRegFile.io.i_debug_mode                    :=      false.B
+  csrRegFile.io.i_debug_cause                   :=      0.U
+  csrRegFile.io.i_debug_csr_save                :=      false.B
+
+  io.fetch_irq_pending_o                        :=      csrRegFile.io.o_irq_pending
+  io.fetch_csr_mstatus_mie_o                    :=      csrRegFile.io.o_csr_mstatus_mie
+  io.fetch_csr_mtvec_o                          :=      csrRegFile.io.o_csr_mtvec
+  io.fetch_csr_mepc_o                           :=      csrRegFile.io.o_csr_mepc
+  io.fetch_mret_inst_o                          :=      mret_inst
 
   // Initialize Hazard Detection unit
   hazardDetection.io.IF_ID_INST := io.IF_ID_inst
@@ -219,7 +284,7 @@ class Decode extends Module {
   reg_file.io.regWrite := io.MEM_WB_ctrl_regWr
 //  reg_file.io.stall := io.stall
   reg_file.io.rd_sel := io.MEM_WB_rd_sel
-  reg_file.io.writeData := io.writeback_write_data
+  reg_file.io.writeData := Mux(io.MEM_WB_ctrl_csrWen, io.MEM_WB_csr_rdata.asSInt(), io.writeback_write_data)
 
 
   // Initialize Immediate Generation
@@ -237,6 +302,9 @@ class Decode extends Module {
   structuralDetector.io.MEM_WB_REGRD := io.MEM_WB_rd_sel
   structuralDetector.io.MEM_WB_regWr := io.MEM_WB_ctrl_regWr
   structuralDetector.io.inst_op_in := io.IF_ID_inst(6,0)
+  //structuralDetector.io.MEM_WB_csrAddr := io.MEM_WB_csrAddr
+  structuralDetector.io.MEM_WB_csrWen := io.MEM_WB_ctrl_csrWen
+  structuralDetector.io.csr_addr := imm_out(11,0)
   // FOR RS1
   when(structuralDetector.io.fwd_rs1 === 1.U) {
     // additionally checking if the instruction is lui or not. We should not pass out
@@ -259,15 +327,15 @@ class Decode extends Module {
 
   when(control.io.out_extend_sel === "b00".U) {
     // I-Type instruction
-    io.imm_out := imm_generation.io.i_imm
+    imm_out := imm_generation.io.i_imm
   } .elsewhen(control.io.out_extend_sel === "b01".U) {
     // S-Type instruction
-    io.imm_out := imm_generation.io.s_imm
+    imm_out := imm_generation.io.s_imm
   } .elsewhen(control.io.out_extend_sel === "b10".U) {
     // U-Type instruction
-    io.imm_out := imm_generation.io.u_imm
+    imm_out := imm_generation.io.u_imm
   } .otherwise {
-    io.imm_out := 0.S(32.W)
+    imm_out := 0.S(32.W)
   }
 
   io.pc_out := io.IF_ID_pc
@@ -279,11 +347,14 @@ class Decode extends Module {
   io.rs1_sel_out := io.IF_ID_inst(19,15)
   io.rs2_sel_out := io.IF_ID_inst(24,20)
 
+  io.csr_op_o := control.io.csr_op_o
+
   def setControlPinsToZero() : Unit = {
     io.ctrl_MemWr_out := 0.U
     io.ctrl_MemRd_out := 0.U
     io.ctrl_Branch_out := 0.U
     io.ctrl_RegWr_out := 0.U
+    io.ctrl_CsrWen_out := false.B
     io.ctrl_MemToReg_out := 0.U
     io.ctrl_AluOp_out := 0.U
     io.ctrl_OpA_sel_out := 0.U
@@ -297,6 +368,7 @@ class Decode extends Module {
     io.ctrl_MemRd_out := control.io.out_memRead
     io.ctrl_Branch_out := control.io.out_branch
     io.ctrl_RegWr_out := control.io.out_regWrite
+    io.ctrl_CsrWen_out := control.io.csr_we_o
     io.ctrl_MemToReg_out := control.io.out_memToReg
     io.ctrl_AluOp_out := control.io.out_aluOp
     io.ctrl_OpA_sel_out := control.io.out_operand_a_sel
@@ -307,5 +379,7 @@ class Decode extends Module {
 
   io.reg_7_out := reg_file.io.reg_7
 
-
+  io.imm_out := imm_out
+  io.fwd_csr_o := structuralDetector.io.fwd_csr
+  io.csr_rdata_o := csrRegFile.io.o_csr_rdata
 }

@@ -19,6 +19,7 @@ class InstructionTypeDecode extends Module {
         val Auipc    = Output(UInt(1.W))
         val multiply = Output(UInt(1.W))
         val csr_type = Output(UInt(1.W))
+        val csr_op = Output(UInt(2.W))
     })
         default_signals()
 
@@ -58,8 +59,9 @@ class InstructionTypeDecode extends Module {
     }
      .elsewhen(io.opcode === "b0010111".U) {
         io.Auipc := 1.U
-    } .elsewhen(io.opcode === "b1110011".U && io.func3 =/= "b000".U) {
+    } .elsewhen(io.opcode === "b1110011".U && io.func3 === "b001".U) {
         io.csr_type := 1.U
+        io.csr_op := "b01".U
     }
      .otherwise 
      {
@@ -79,6 +81,7 @@ class InstructionTypeDecode extends Module {
         io.Auipc    := 0.U
         io.multiply := 0.U
         io.csr_type := 0.U
+        io.csr_op := 0.U
     }
 
 }
