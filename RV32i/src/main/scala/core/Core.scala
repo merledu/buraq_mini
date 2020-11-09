@@ -152,7 +152,10 @@ class Core extends Module {
   decode.io.IF_ID_pc4                           :=      fetch.io.decode_if_id_pc4_o
   decode.io.MEM_WB_ctrl_regWr                   :=      MEM_WB.io.ctrl_RegWr_out
   decode.io.MEM_WB_ctrl_csrWen                  :=      MEM_WB.io.ctrl_CsrWen_out
+  decode.io.ID_EX_ctrl_csrWen                   :=      ID_EX.io.ctrl_CsrWen_out
   decode.io.MEM_WB_csrAddr                      :=      MEM_WB.io.csr_addr_out(11,0).asUInt()
+  decode.io.ID_EX_ctrl_csrAddr                  :=      ID_EX.io.imm_out(11,0).asUInt()
+  decode.io.ID_EX_rs1_data                      :=      ID_EX.io.rs1_out
   decode.io.MEM_WB_rd_sel                       :=      MEM_WB.io.rd_sel_out
   decode.io.ID_EX_ctrl_MemRd                    :=      ID_EX.io.ctrl_MemRd_out
   decode.io.ID_EX_rd_sel                        :=      ID_EX.io.rd_sel_out

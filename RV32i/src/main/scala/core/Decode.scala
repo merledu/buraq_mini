@@ -1,6 +1,7 @@
 package core
 
 import chisel3._
+import main.scala.core.CsrHazardUnit
 import main.scala.core.csrs.CsrRegisterFile
 /** TODO: rs1 out and rs2 out must be 0 when instruction is lui */
 class Decode extends Module {
@@ -14,6 +15,9 @@ class Decode extends Module {
     val MEM_WB_ctrl_csrWen = Input(Bool())
     val MEM_WB_rd_sel = Input(UInt(5.W))
     val ID_EX_ctrl_MemRd = Input(UInt(1.W))
+    val ID_EX_ctrl_csrWen = Input(Bool())           // used by csr hazard unit for forwarding
+    val ID_EX_ctrl_csrAddr = Input(UInt(12.W))      // used by csr hazard unit for forwarding
+    val ID_EX_rs1_data = Input(SInt(32.W))          // used to forward rs1 data from ID/EX if csr hazard occurs
     val ID_EX_rd_sel = Input(UInt(5.W))
     val EX_MEM_rd_sel = Input(UInt(5.W))
     val EX_MEM_ctrl_MemRd = Input(UInt(1.W))
@@ -89,6 +93,7 @@ class Decode extends Module {
   val structuralDetector = Module(new StructuralDetector())
   val jalr = Module(new Jalr())
   val csrRegFile       =      Module(new CsrRegisterFile())
+  val csrHazardUnit = Module(new CsrHazardUnit())
 
 
   val imm_out = Wire(SInt(32.W))
@@ -137,6 +142,14 @@ class Decode extends Module {
   io.fetch_csr_mtvec_o                          :=      csrRegFile.io.o_csr_mtvec
   io.fetch_csr_mepc_o                           :=      csrRegFile.io.o_csr_mepc
   io.fetch_mret_inst_o                          :=      mret_inst
+
+  // Initialize Csr Hazard Unit
+  csrHazardUnit.io.ID_EX_csrWen := io.ID_EX_ctrl_csrWen
+  csrHazardUnit.io.ID_EX_csrAddr := io.ID_EX_ctrl_csrAddr
+  csrHazardUnit.io.csr_addr_in_decode := io.IF_ID_inst(31,20)
+  csrHazardUnit.io.csr_wen_in_decode := control.io.csr_we_o
+  csrHazardUnit.io.rs1_sel_in_decode := io.IF_ID_inst(19,15)
+  csrHazardUnit.io.ID_EX_rd_sel := io.ID_EX_rd_sel
 
   // Initialize Hazard Detection unit
   hazardDetection.io.IF_ID_INST := io.IF_ID_inst
@@ -302,9 +315,10 @@ class Decode extends Module {
   structuralDetector.io.MEM_WB_REGRD := io.MEM_WB_rd_sel
   structuralDetector.io.MEM_WB_regWr := io.MEM_WB_ctrl_regWr
   structuralDetector.io.inst_op_in := io.IF_ID_inst(6,0)
-  //structuralDetector.io.MEM_WB_csrAddr := io.MEM_WB_csrAddr
+  structuralDetector.io.MEM_WB_csrAddr := io.MEM_WB_csrAddr
   structuralDetector.io.MEM_WB_csrWen := io.MEM_WB_ctrl_csrWen
-  structuralDetector.io.csr_addr := imm_out(11,0)
+  structuralDetector.io.csr_addr_in_decode := imm_out(11,0)
+  structuralDetector.io.is_csr_inst_in_decode := control.io.csr_we_o
   // FOR RS1
   when(structuralDetector.io.fwd_rs1 === 1.U) {
     // additionally checking if the instruction is lui or not. We should not pass out
@@ -381,5 +395,14 @@ class Decode extends Module {
 
   io.imm_out := imm_out
   io.fwd_csr_o := structuralDetector.io.fwd_csr
-  io.csr_rdata_o := csrRegFile.io.o_csr_rdata
+
+  when(csrHazardUnit.io.forward_rs1) {
+    io.rs1_out := io.alu_output
+  }
+  when(csrHazardUnit.io.forward_csr === "b01".U) {
+    io.csr_rdata_o := io.ID_EX_rs1_data.asUInt()
+  } .otherwise {
+    io.csr_rdata_o := csrRegFile.io.o_csr_rdata
+  }
+
 }
