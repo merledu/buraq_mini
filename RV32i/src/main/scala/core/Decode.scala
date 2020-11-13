@@ -1,12 +1,12 @@
 package core
 
 import chisel3._
-import main.scala.core.CsrHazardUnit
+import main.scala.core.CsrControlUnit
 import main.scala.core.csrs.CsrRegisterFile
-/** TODO: rs1 out and rs2 out must be 0 when instruction is lui */
+
 class Decode extends Module {
   val io = IO(new Bundle {
- //   val enable_M_extension = Input(UInt(1.W))
+    //   val enable_M_extension = Input(UInt(1.W))
     val irq_external_i = Input(Bool())
     val IF_ID_inst = Input(UInt(32.W))
     val IF_ID_pc = Input(SInt(32.W))
@@ -15,20 +15,28 @@ class Decode extends Module {
     val MEM_WB_ctrl_csrWen = Input(Bool())
     val MEM_WB_rd_sel = Input(UInt(5.W))
     val ID_EX_ctrl_MemRd = Input(UInt(1.W))
+    val ID_EX_ctrl_regWr = Input(Bool())
     val ID_EX_ctrl_csrWen = Input(Bool())           // used by csr hazard unit for forwarding
-    val ID_EX_ctrl_csrAddr = Input(UInt(12.W))      // used by csr hazard unit for forwarding
-    val ID_EX_rs1_data = Input(SInt(32.W))          // used to forward rs1 data from ID/EX if csr hazard occurs
+    val EX_MEM_ctrl_csrWen = Input(Bool())          // used by csr hazard unit for forwarding
+    //    val ID_EX_ctrl_csrAddr = Input(UInt(12.W))      // used by csr hazard unit for forwarding
+    //    val EX_MEM_ctrl_csrAddr = Input(UInt(12.W))     // used by csr hazard unit for forwarding
+    //val ID_EX_rs1_data = Input(SInt(32.W))          // used to forward rs1 data from ID/EX if csr hazard occurs
     val ID_EX_rd_sel = Input(UInt(5.W))
     val EX_MEM_rd_sel = Input(UInt(5.W))
     val EX_MEM_ctrl_MemRd = Input(UInt(1.W))
+    val EX_MEM_ctrl_regWr = Input(Bool())
     val MEM_WB_ctrl_MemRd = Input(UInt(1.W))
     val alu_output = Input(SInt(32.W))
     val EX_MEM_alu_output = Input(SInt(32.W))
+    val MEM_WB_alu_output = Input(SInt(32.W))
     val dmem_memOut = Input(SInt(32.W))
-    val writeback_write_data = Input(SInt(32.W))    // rs1 data coming from write back
-    val MEM_WB_csrAddr = Input(UInt(12.W))
-    val MEM_WB_csr_op = Input(UInt(2.W))
-    val MEM_WB_csr_rdata = Input(UInt(32.W))        // csr data coming from MEM_WB
+    val dccm_rvalid_i = Input(Bool())
+    val writeback_write_data = Input(SInt(32.W)) // rs1 data coming from write back
+    //    val MEM_WB_csrAddr = Input(UInt(12.W))
+    //    val MEM_WB_csr_op = Input(UInt(2.W))
+    val MEM_WB_csr_rdata_i = Input(UInt(32.W)) // csr data coming from MEM_WB
+    val EX_MEM_csr_rdata_i = Input(UInt(32.W))
+    val ID_EX_csr_rdata_i = Input(UInt(32.W))
 
     val fetch_csr_mtvec_init = Input(Bool())
     val fetch_csr_if_pc = Input(UInt(32.W))
@@ -36,8 +44,8 @@ class Decode extends Module {
     val fetch_exc_cause_i = Input(UInt(6.W))
     val fetch_csr_save_cause_i = Input(Bool())
     val execute_regwrite = Input(UInt(1.W))
-    val mem_regwrite     = Input(UInt(1.W))
-    val wb_regwrite      = Input(UInt(1.W))
+    val mem_regwrite = Input(UInt(1.W))
+    val wb_regwrite = Input(UInt(1.W))
 
     //val stall = Input(UInt(1.W))
 
@@ -74,14 +82,14 @@ class Decode extends Module {
     val ctrl_next_pc_sel_out = Output(UInt(2.W))
     val reg_7_out = Output(SInt(32.W))
     //val mret_inst_o = Output(Bool())
-    val csr_op_o = Output(UInt(2.W))
-    val fwd_csr_o = Output(Bool())
+    //val csr_op_o = Output(UInt(2.W))
+    //val fwd_csr_o = Output(Bool())
     val fetch_irq_pending_o = Output(Bool())
     val fetch_csr_mstatus_mie_o = Output(Bool())
     val fetch_csr_mtvec_o = Output(UInt(32.W))
     val fetch_csr_mepc_o = Output(UInt(32.W))
     val fetch_mret_inst_o = Output(Bool())
-  //  val M_extension_enabled = Output(UInt(1.W))
+    //  val M_extension_enabled = Output(UInt(1.W))
   })
 
   val hazardDetection = Module(new HazardDetection())
@@ -92,64 +100,84 @@ class Decode extends Module {
   val imm_generation = Module(new ImmediateGeneration())
   val structuralDetector = Module(new StructuralDetector())
   val jalr = Module(new Jalr())
-  val csrRegFile       =      Module(new CsrRegisterFile())
-  val csrHazardUnit = Module(new CsrHazardUnit())
+  val csrRegFile = Module(new CsrRegisterFile())
+  val csrControlUnit = Module(new CsrControlUnit())
 
 
   val imm_out = Wire(SInt(32.W))
   val mret_inst = Wire(Bool())
+  val csr_wdata = Wire(UInt(32.W))
   // detecting MRET instruction
-  mret_inst := Mux(io.IF_ID_inst(6,0) === "h73".U && io.IF_ID_inst(14,12) === "b000".U && io.IF_ID_inst(31,20) === "h302".U(12.W), true.B, false.B)
+  mret_inst := Mux(io.IF_ID_inst(6, 0) === "h73".U && io.IF_ID_inst(14, 12) === "b000".U && io.IF_ID_inst(31, 20) === "h302".U(12.W), true.B, false.B)
 
   // CSR Register file
-  csrRegFile.io.i_hart_id                       :=      0.U
-  csrRegFile.io.i_boot_addr                     :=      0.U
-  csrRegFile.io.i_csr_mtvec_init                :=      io.fetch_csr_mtvec_init
-  csrRegFile.io.i_csr_access                    :=      io.MEM_WB_ctrl_csrWen
-  csrRegFile.io.i_csr_wdata                     :=      io.writeback_write_data.asUInt()  // data from rs1
-  csrRegFile.io.i_csr_op                        :=      io.MEM_WB_csr_op
-  csrRegFile.io.i_csr_op_en                     :=      io.MEM_WB_ctrl_csrWen   // right now the operation enables when csr instruction is in writeback stage
-  csrRegFile.io.i_csr_addr                      :=      Mux(io.MEM_WB_ctrl_csrWen, io.MEM_WB_csrAddr, io.IF_ID_inst(31,20)) // if instruction in wb stage wants to write use that address else use the current imm value to read the csr
-  csrRegFile.io.i_irq_software                  :=      false.B
-  csrRegFile.io.i_irq_timer                     :=      false.B
-  csrRegFile.io.i_irq_external                  :=      io.irq_external_i
-  csrRegFile.io.i_nmi_mode                      :=      false.B
-  csrRegFile.io.i_pc_if                         :=      io.fetch_csr_if_pc
-  csrRegFile.io.i_pc_id                         :=      0.U
-  csrRegFile.io.i_pc_wb                         :=      0.U
-  csrRegFile.io.i_csr_save_if                   :=      io.fetch_csr_save_if
-  csrRegFile.io.i_csr_save_id                   :=      false.B
-  csrRegFile.io.i_csr_save_wb                   :=      false.B
-  csrRegFile.io.i_csr_restore_mret              :=      mret_inst
-  csrRegFile.io.i_csr_restore_dret              :=      false.B
-  csrRegFile.io.i_csr_mcause                    :=      io.fetch_exc_cause_i
-  csrRegFile.io.i_csr_save_cause                :=      io.fetch_csr_save_cause_i
-  csrRegFile.io.i_csr_mtval                     :=      0.U
-  csrRegFile.io.i_instr_ret                     :=      false.B
-  csrRegFile.io.i_iside_wait                    :=      false.B
-  csrRegFile.io.i_jump                          :=      false.B
-  csrRegFile.io.i_branch                        :=      false.B
-  csrRegFile.io.i_branch_taken                  :=      false.B
-  csrRegFile.io.i_mem_load                      :=      false.B
-  csrRegFile.io.i_mem_store                     :=      false.B
-  csrRegFile.io.i_dside_wait                    :=      false.B
-  csrRegFile.io.i_debug_mode                    :=      false.B
-  csrRegFile.io.i_debug_cause                   :=      0.U
-  csrRegFile.io.i_debug_csr_save                :=      false.B
+  csrRegFile.io.i_hart_id := 0.U
+  csrRegFile.io.i_boot_addr := 0.U
+  csrRegFile.io.i_csr_mtvec_init := io.fetch_csr_mtvec_init
+  //  csrRegFile.io.i_csr_access                    :=      io.MEM_WB_ctrl_csrWen
+  csrRegFile.io.i_csr_access := control.io.csr_we_o   // used for checking illegal instructions in csr register file
+  //  csrRegFile.io.i_csr_wdata                     :=      io.writeback_write_data.asUInt()  // data from rs1
+  csrRegFile.io.i_csr_wdata := csr_wdata // data read from rs1 register (May need to resolve hazards if rs1 is not yet written with updated value from the instruction in pipe
+  csrRegFile.io.i_csr_op := control.io.csr_op_o
+  //  csrRegFile.io.i_csr_op_en                     :=      io.MEM_WB_ctrl_csrWen   // right now the operation enables when csr instruction is in writeback stage
+  csrRegFile.io.i_csr_op_en := csrControlUnit.io.csr_op_en_o // enabling write/set/clear  operation when csr instruction in decode stage
+  //  csrRegFile.io.i_csr_addr                      :=      Mux(io.MEM_WB_ctrl_csrWen, io.MEM_WB_csrAddr, io.IF_ID_inst(31,20)) // if instruction in wb stage wants to write use that address else use the current imm value to read the csr
+  csrRegFile.io.i_csr_addr := io.IF_ID_inst(31, 20) // reading the imm value to use as csr address
+  csrRegFile.io.i_irq_software := false.B
+  csrRegFile.io.i_irq_timer := false.B
+  csrRegFile.io.i_irq_external := io.irq_external_i
+  csrRegFile.io.i_nmi_mode := false.B
+  csrRegFile.io.i_pc_if := io.fetch_csr_if_pc
+  csrRegFile.io.i_pc_id := 0.U
+  csrRegFile.io.i_pc_wb := 0.U
+  csrRegFile.io.i_csr_save_if := io.fetch_csr_save_if
+  csrRegFile.io.i_csr_save_id := false.B
+  csrRegFile.io.i_csr_save_wb := false.B
+  csrRegFile.io.i_csr_restore_mret := mret_inst
+  csrRegFile.io.i_csr_restore_dret := false.B
+  csrRegFile.io.i_csr_mcause := io.fetch_exc_cause_i
+  csrRegFile.io.i_csr_save_cause := io.fetch_csr_save_cause_i
+  csrRegFile.io.i_csr_mtval := 0.U
+  csrRegFile.io.i_instr_ret := false.B
+  csrRegFile.io.i_iside_wait := false.B
+  csrRegFile.io.i_jump := false.B
+  csrRegFile.io.i_branch := false.B
+  csrRegFile.io.i_branch_taken := false.B
+  csrRegFile.io.i_mem_load := false.B
+  csrRegFile.io.i_mem_store := false.B
+  csrRegFile.io.i_dside_wait := false.B
+  csrRegFile.io.i_debug_mode := false.B
+  csrRegFile.io.i_debug_cause := 0.U
+  csrRegFile.io.i_debug_csr_save := false.B
 
-  io.fetch_irq_pending_o                        :=      csrRegFile.io.o_irq_pending
-  io.fetch_csr_mstatus_mie_o                    :=      csrRegFile.io.o_csr_mstatus_mie
-  io.fetch_csr_mtvec_o                          :=      csrRegFile.io.o_csr_mtvec
-  io.fetch_csr_mepc_o                           :=      csrRegFile.io.o_csr_mepc
-  io.fetch_mret_inst_o                          :=      mret_inst
+  io.fetch_irq_pending_o := csrRegFile.io.o_irq_pending
+  io.fetch_csr_mstatus_mie_o := csrRegFile.io.o_csr_mstatus_mie
+  io.fetch_csr_mtvec_o := csrRegFile.io.o_csr_mtvec
+  io.fetch_csr_mepc_o := csrRegFile.io.o_csr_mepc
+  io.fetch_mret_inst_o := mret_inst
 
   // Initialize Csr Hazard Unit
-  csrHazardUnit.io.ID_EX_csrWen := io.ID_EX_ctrl_csrWen
-  csrHazardUnit.io.ID_EX_csrAddr := io.ID_EX_ctrl_csrAddr
-  csrHazardUnit.io.csr_addr_in_decode := io.IF_ID_inst(31,20)
-  csrHazardUnit.io.csr_wen_in_decode := control.io.csr_we_o
-  csrHazardUnit.io.rs1_sel_in_decode := io.IF_ID_inst(19,15)
-  csrHazardUnit.io.ID_EX_rd_sel := io.ID_EX_rd_sel
+  csrControlUnit.io.reg_wr_in_execute := io.ID_EX_ctrl_regWr
+  csrControlUnit.io.rd_sel_in_execute := io.ID_EX_rd_sel
+  csrControlUnit.io.reg_wr_in_memory := io.EX_MEM_ctrl_regWr
+  csrControlUnit.io.rd_sel_in_memory := io.EX_MEM_rd_sel
+  csrControlUnit.io.reg_wr_in_writeback := io.MEM_WB_ctrl_regWr
+  csrControlUnit.io.rd_sel_in_writeback := io.MEM_WB_rd_sel
+  csrControlUnit.io.rs1_sel_in_decode := io.IF_ID_inst(19, 15)
+  csrControlUnit.io.csr_inst_in_decode := control.io.csr_we_o
+  csrControlUnit.io.load_inst_in_execute := io.ID_EX_ctrl_MemRd
+  csrControlUnit.io.load_inst_in_memory := io.EX_MEM_ctrl_MemRd
+  csrControlUnit.io.dccm_rvalid_i := io.dccm_rvalid_i
+  csrControlUnit.io.csr_wr_in_execute := io.ID_EX_ctrl_csrWen
+  csrControlUnit.io.csr_wr_in_memory := io.EX_MEM_ctrl_csrWen
+  csrControlUnit.io.csr_wr_in_writeback := io.MEM_WB_ctrl_csrWen
+  //  csrHazardUnit.io.EX_MEM_csrWen := io.EX_MEM_ctrl_csrWen
+  //  csrHazardUnit.io.EX_MEM_csrAddr := io.EX_MEM_ctrl_csrAddr
+  //  csrHazardUnit.io.MEM_WB_csrWen  := io.MEM_WB_ctrl_csrWen
+  //  csrHazardUnit.io.MEM_WB_csrAddr := io.MEM_WB_csrAddr
+  //  csrHazardUnit.io.csr_addr_in_decode := io.IF_ID_inst(31,20)
+  //  csrHazardUnit.io.csr_wen_in_decode := control.io.csr_we_o
+  //csrHazardUnit.io.ID_EX_rd_sel := io.ID_EX_rd_sel
 
   // Initialize Hazard Detection unit
   hazardDetection.io.IF_ID_INST := io.IF_ID_inst
@@ -168,9 +196,9 @@ class Decode extends Module {
 
   // Initialize Control Unit
   control.io.in_opcode := io.IF_ID_inst(6, 0)
- // control.io.enable_M_extension := io.enable_M_extension // M extension
-  control.io.func7      := io.IF_ID_inst(31,25)
-  control.io.func3      := io.IF_ID_inst(14,12)
+  // control.io.enable_M_extension := io.enable_M_extension // M extension
+  control.io.func7 := io.IF_ID_inst(31, 25)
+  control.io.func3 := io.IF_ID_inst(14, 12)
 
   // Initialize Decode Forward Unit
   decodeForwardUnit.io.ID_EX_REGRD := io.ID_EX_rd_sel
@@ -187,7 +215,7 @@ class Decode extends Module {
   decodeForwardUnit.io.mem_regwrite := io.mem_regwrite
   decodeForwardUnit.io.wb_regwrite := io.wb_regwrite
 
-  branchLogic.io.in_func3 := io.IF_ID_inst(14,12)
+  branchLogic.io.in_func3 := io.IF_ID_inst(14, 12)
 
   // FOR REGISTER RS1 in BRANCH LOGIC UNIT and JALR UNIT
 
@@ -198,23 +226,23 @@ class Decode extends Module {
     // No hazard just use register file data
     branchLogic.io.in_rs1 := reg_file.io.rs1
     jalr.io.input_a := reg_file.io.rs1
-  } .elsewhen(decodeForwardUnit.io.forward_rs1 === "b0001".U) {
+  }.elsewhen(decodeForwardUnit.io.forward_rs1 === "b0001".U) {
     // hazard in alu stage forward data from alu output
     branchLogic.io.in_rs1 := io.alu_output
     jalr.io.input_a := reg_file.io.rs1
-  } .elsewhen(decodeForwardUnit.io.forward_rs1 === "b0010".U) {
+  }.elsewhen(decodeForwardUnit.io.forward_rs1 === "b0010".U) {
     // hazard in EX/MEM stage forward data from EX/MEM.alu_output
     branchLogic.io.in_rs1 := io.EX_MEM_alu_output
     jalr.io.input_a := reg_file.io.rs1
-  } .elsewhen(decodeForwardUnit.io.forward_rs1 === "b0011".U) {
+  }.elsewhen(decodeForwardUnit.io.forward_rs1 === "b0011".U) {
     // hazard in MEM/WB stage forward data from register file write data which will have correct data from the MEM/WB mux
     branchLogic.io.in_rs1 := reg_file.io.writeData
     jalr.io.input_a := reg_file.io.rs1
-  } .elsewhen(decodeForwardUnit.io.forward_rs1 === "b0100".U) {
+  }.elsewhen(decodeForwardUnit.io.forward_rs1 === "b0100".U) {
     // hazard in EX/MEM stage and load type instruction so forwarding from data memory data output instead of EX/MEM.alu_output
     branchLogic.io.in_rs1 := io.dmem_memOut
     jalr.io.input_a := reg_file.io.rs1
-  } .elsewhen(decodeForwardUnit.io.forward_rs1 === "b0101".U) {
+  }.elsewhen(decodeForwardUnit.io.forward_rs1 === "b0101".U) {
     // hazard in MEM/WB stage and load type instruction so forwarding from register file write data which will have the correct output from the mux
     branchLogic.io.in_rs1 := reg_file.io.writeData
     jalr.io.input_a := reg_file.io.rs1
@@ -228,19 +256,19 @@ class Decode extends Module {
       // hazard in alu stage forward data from alu output
       jalr.io.input_a := io.alu_output
       branchLogic.io.in_rs1 := reg_file.io.rs1
-    } .elsewhen(decodeForwardUnit.io.forward_rs1 === "b0111".U) {
+    }.elsewhen(decodeForwardUnit.io.forward_rs1 === "b0111".U) {
     // hazard in EX/MEM stage forward data from EX/MEM.alu_output
     jalr.io.input_a := io.EX_MEM_alu_output
     branchLogic.io.in_rs1 := reg_file.io.rs1
-  } .elsewhen(decodeForwardUnit.io.forward_rs1 === "b1000".U) {
+  }.elsewhen(decodeForwardUnit.io.forward_rs1 === "b1000".U) {
     // hazard in MEM/WB stage forward data from register file write data which will have correct data from the MEM/WB mux
     jalr.io.input_a := reg_file.io.writeData
     branchLogic.io.in_rs1 := reg_file.io.rs1
-  } .elsewhen(decodeForwardUnit.io.forward_rs1 === "b1001".U) {
+  }.elsewhen(decodeForwardUnit.io.forward_rs1 === "b1001".U) {
     // hazard in EX/MEM stage and load type instruction so forwarding from data memory data output instead of EX/MEM.alu_output
     jalr.io.input_a := io.dmem_memOut
     branchLogic.io.in_rs1 := reg_file.io.rs1
-  } .elsewhen(decodeForwardUnit.io.forward_rs1 === "b1010".U) {
+  }.elsewhen(decodeForwardUnit.io.forward_rs1 === "b1010".U) {
     // hazard in MEM/WB stage and load type instruction so forwarding from register file write data which will have the correct output from the mux
     jalr.io.input_a := reg_file.io.writeData
     branchLogic.io.in_rs1 := reg_file.io.rs1
@@ -255,19 +283,19 @@ class Decode extends Module {
   when(decodeForwardUnit.io.forward_rs2 === "b0000".U) {
     // No hazard just use register file data
     branchLogic.io.in_rs2 := reg_file.io.rs2
-  } .elsewhen(decodeForwardUnit.io.forward_rs2 === "b0001".U) {
+  }.elsewhen(decodeForwardUnit.io.forward_rs2 === "b0001".U) {
     // hazard in alu stage forward data from alu output
     branchLogic.io.in_rs2 := io.alu_output
-  } .elsewhen(decodeForwardUnit.io.forward_rs2 === "b0010".U) {
+  }.elsewhen(decodeForwardUnit.io.forward_rs2 === "b0010".U) {
     // hazard in EX/MEM stage forward data from EX/MEM.alu_output
     branchLogic.io.in_rs2 := io.EX_MEM_alu_output
-  } .elsewhen(decodeForwardUnit.io.forward_rs2 === "b0011".U) {
+  }.elsewhen(decodeForwardUnit.io.forward_rs2 === "b0011".U) {
     // hazard in MEM/WB stage forward data from register file write data which will have correct data from the MEM/WB mux
     branchLogic.io.in_rs2 := reg_file.io.writeData
-  } .elsewhen(decodeForwardUnit.io.forward_rs2 === "b0100".U) {
+  }.elsewhen(decodeForwardUnit.io.forward_rs2 === "b0100".U) {
     // hazard in EX/MEM stage and load type instruction so forwarding from data memory data output instead of EX/MEM.alu_output
     branchLogic.io.in_rs2 := io.dmem_memOut
-  } .elsewhen(decodeForwardUnit.io.forward_rs2 === "b0101".U) {
+  }.elsewhen(decodeForwardUnit.io.forward_rs2 === "b0101".U) {
     // hazard in MEM/WB stage and load type instruction so forwarding from register file write data which will have the correct output from the mux
     branchLogic.io.in_rs2 := reg_file.io.writeData
   }
@@ -285,19 +313,18 @@ class Decode extends Module {
   // for stalling the pipeline one clock cycle.
   when(hazardDetection.io.ctrl_forward === "b1".U) {
     setControlPinsToZero()
-  } .otherwise {
+  }.otherwise {
     sendDefaultControlPins()
   }
-
 
 
   // Initialize Register File
   reg_file.io.rs1_sel := io.IF_ID_inst(19, 15)
   reg_file.io.rs2_sel := io.IF_ID_inst(24, 20)
   reg_file.io.regWrite := io.MEM_WB_ctrl_regWr
-//  reg_file.io.stall := io.stall
+  //  reg_file.io.stall := io.stall
   reg_file.io.rd_sel := io.MEM_WB_rd_sel
-  reg_file.io.writeData := Mux(io.MEM_WB_ctrl_csrWen, io.MEM_WB_csr_rdata.asSInt(), io.writeback_write_data)
+  reg_file.io.writeData := Mux(io.MEM_WB_ctrl_csrWen, io.MEM_WB_csr_rdata_i.asSInt(), io.writeback_write_data)
 
 
   // Initialize Immediate Generation
@@ -314,19 +341,19 @@ class Decode extends Module {
   structuralDetector.io.rs2_sel := io.IF_ID_inst(24, 20)
   structuralDetector.io.MEM_WB_REGRD := io.MEM_WB_rd_sel
   structuralDetector.io.MEM_WB_regWr := io.MEM_WB_ctrl_regWr
-  structuralDetector.io.inst_op_in := io.IF_ID_inst(6,0)
-  structuralDetector.io.MEM_WB_csrAddr := io.MEM_WB_csrAddr
-  structuralDetector.io.MEM_WB_csrWen := io.MEM_WB_ctrl_csrWen
-  structuralDetector.io.csr_addr_in_decode := imm_out(11,0)
-  structuralDetector.io.is_csr_inst_in_decode := control.io.csr_we_o
+  structuralDetector.io.inst_op_in := io.IF_ID_inst(6, 0)
+  //structuralDetector.io.MEM_WB_csrAddr := io.MEM_WB_csrAddr
+  //structuralDetector.io.MEM_WB_csrWen := io.MEM_WB_ctrl_csrWen
+  //structuralDetector.io.csr_addr_in_decode := imm_out(11,0)
+  //structuralDetector.io.is_csr_inst_in_decode := control.io.csr_we_o
   // FOR RS1
   when(structuralDetector.io.fwd_rs1 === 1.U) {
     // additionally checking if the instruction is lui or not. We should not pass out
     // any value from the rs1 if lui is currently being decoded since it does not have
     // an rs1 field in it's encoding
-    io.rs1_out := Mux(io.IF_ID_inst(6,0) =/= "b0110111".U, reg_file.io.writeData, 0.S)
-  } .otherwise {
-    io.rs1_out := Mux(io.IF_ID_inst(6,0) =/= "b0110111".U, reg_file.io.rs1, 0.S)
+    io.rs1_out := Mux(io.IF_ID_inst(6, 0) =/= "b0110111".U, reg_file.io.writeData, 0.S)
+  }.otherwise {
+    io.rs1_out := Mux(io.IF_ID_inst(6, 0) =/= "b0110111".U, reg_file.io.rs1, 0.S)
   }
 
   // FOR RS2
@@ -334,36 +361,36 @@ class Decode extends Module {
     // additionally checking if the instruction is lui or not. We should not pass out
     // any value from the rs2 if lui is currently being decoded since it does not have
     // an rs2 field in it's encoding
-    io.rs2_out := Mux(io.IF_ID_inst(6,0) =/= "b0110111".U, reg_file.io.writeData, 0.S)
-  } .otherwise {
-    io.rs2_out := Mux(io.IF_ID_inst(6,0) =/= "b0110111".U, reg_file.io.rs2, 0.S)
+    io.rs2_out := Mux(io.IF_ID_inst(6, 0) =/= "b0110111".U, reg_file.io.writeData, 0.S)
+  }.otherwise {
+    io.rs2_out := Mux(io.IF_ID_inst(6, 0) =/= "b0110111".U, reg_file.io.rs2, 0.S)
   }
 
   when(control.io.out_extend_sel === "b00".U) {
     // I-Type instruction
     imm_out := imm_generation.io.i_imm
-  } .elsewhen(control.io.out_extend_sel === "b01".U) {
+  }.elsewhen(control.io.out_extend_sel === "b01".U) {
     // S-Type instruction
     imm_out := imm_generation.io.s_imm
-  } .elsewhen(control.io.out_extend_sel === "b10".U) {
+  }.elsewhen(control.io.out_extend_sel === "b10".U) {
     // U-Type instruction
     imm_out := imm_generation.io.u_imm
-  } .otherwise {
+  }.otherwise {
     imm_out := 0.S(32.W)
   }
 
   io.pc_out := io.IF_ID_pc
   io.pc4_out := io.IF_ID_pc4
-  io.inst_op_out := io.IF_ID_inst(6,0)    // used by the forward unit to see if instruction is eligible for data hazards
-  io.func3_out := io.IF_ID_inst(14,12)
-  io.func7_out := io.IF_ID_inst(31,25)
-  io.rd_sel_out := io.IF_ID_inst(11,7)
-  io.rs1_sel_out := io.IF_ID_inst(19,15)
-  io.rs2_sel_out := io.IF_ID_inst(24,20)
+  io.inst_op_out := io.IF_ID_inst(6, 0) // used by the forward unit to see if instruction is eligible for data hazards
+  io.func3_out := io.IF_ID_inst(14, 12)
+  io.func7_out := io.IF_ID_inst(31, 25)
+  io.rd_sel_out := io.IF_ID_inst(11, 7)
+  io.rs1_sel_out := io.IF_ID_inst(19, 15)
+  io.rs2_sel_out := io.IF_ID_inst(24, 20)
 
-  io.csr_op_o := control.io.csr_op_o
+  //  io.csr_op_o := control.io.csr_op_o
 
-  def setControlPinsToZero() : Unit = {
+  def setControlPinsToZero(): Unit = {
     io.ctrl_MemWr_out := 0.U
     io.ctrl_MemRd_out := 0.U
     io.ctrl_Branch_out := 0.U
@@ -374,10 +401,10 @@ class Decode extends Module {
     io.ctrl_OpA_sel_out := 0.U
     io.ctrl_OpB_sel_out := 0.U
     io.ctrl_next_pc_sel_out := 0.U
- //   io.M_extension_enabled := 0.U
+    //   io.M_extension_enabled := 0.U
   }
 
-  def sendDefaultControlPins() : Unit = {
+  def sendDefaultControlPins(): Unit = {
     io.ctrl_MemWr_out := control.io.out_memWrite
     io.ctrl_MemRd_out := control.io.out_memRead
     io.ctrl_Branch_out := control.io.out_branch
@@ -388,21 +415,33 @@ class Decode extends Module {
     io.ctrl_OpA_sel_out := control.io.out_operand_a_sel
     io.ctrl_OpB_sel_out := control.io.out_operand_b_sel
     io.ctrl_next_pc_sel_out := control.io.out_next_pc_sel
- //   io.M_extension_enabled := control.io.M_extension_enabled
+    //   io.M_extension_enabled := control.io.M_extension_enabled
   }
 
   io.reg_7_out := reg_file.io.reg_7
 
   io.imm_out := imm_out
-  io.fwd_csr_o := structuralDetector.io.fwd_csr
 
-  when(csrHazardUnit.io.forward_rs1) {
-    io.rs1_out := io.alu_output
+  when(csrControlUnit.io.forward_rs1 === 1.U) {
+    csr_wdata := io.alu_output.asUInt()
+  }.elsewhen(csrControlUnit.io.forward_rs1 === 2.U) {
+    // hazard in memory stage. If load instruction in memory stage then forward data read from memory
+    // else forward alu output data from EX/MEM pipeline register
+    csr_wdata := Mux(io.EX_MEM_ctrl_MemRd === 1.U, io.dmem_memOut.asUInt(), io.EX_MEM_alu_output.asUInt())
+  }.elsewhen(csrControlUnit.io.forward_rs1 === 3.U) {
+    csr_wdata := io.writeback_write_data.asUInt()
+  }.elsewhen(csrControlUnit.io.forward_rs1 === 4.U) {
+    // csr hazard in excute stage
+    csr_wdata := io.ID_EX_csr_rdata_i
+  }.elsewhen(csrControlUnit.io.forward_rs1 === 5.U) {
+    // csr hazard in memory stage
+    csr_wdata := io.EX_MEM_csr_rdata_i
+  }.elsewhen(csrControlUnit.io.forward_rs1 === 6.U) {
+    csr_wdata := io.MEM_WB_csr_rdata_i
+  }.otherwise {
+    csr_wdata := reg_file.io.rs1.asUInt()
   }
-  when(csrHazardUnit.io.forward_csr === "b01".U) {
-    io.csr_rdata_o := io.ID_EX_rs1_data.asUInt()
-  } .otherwise {
-    io.csr_rdata_o := csrRegFile.io.o_csr_rdata
-  }
+
+  io.csr_rdata_o := csrRegFile.io.o_csr_rdata
 
 }

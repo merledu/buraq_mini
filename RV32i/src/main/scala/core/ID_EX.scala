@@ -25,7 +25,7 @@ class ID_EX extends Module {
         val ctrl_OpB_sel_in = Input(UInt(1.W))
         val ctrl_nextPc_sel_in = Input(UInt(2.W))
         val inst_op_in = Input(UInt(7.W))
-        val csr_op_in = Input(UInt(2.W))
+//        val csr_op_in = Input(UInt(2.W))
         val csr_data_i = Input(UInt(32.W))
       //  val M_extension_enabled_in = Input(UInt(1.W))
 
@@ -52,7 +52,7 @@ class ID_EX extends Module {
         val ctrl_OpA_sel_out = Output(UInt(2.W))
         val ctrl_OpB_sel_out = Output(UInt(1.W))
         val ctrl_nextPc_sel_out = Output(UInt(2.W))
-        val csr_op_o = Output(UInt(2.W))
+//        val csr_op_o = Output(UInt(2.W))
         val csr_data_o = Output(UInt(32.W))
       //  val M_extension_enabled = Output(UInt(1.W))
     })
@@ -67,7 +67,7 @@ class ID_EX extends Module {
     val func3_reg = RegInit(0.U(3.W))
     val func7_reg = RegInit(0.U(7.W))
     val inst_op_reg = RegInit(0.U(7.W))
-    val csr_op_reg = RegInit(0.U(2.W))
+//    val csr_op_reg = RegInit(0.U(2.W))
     val csr_data_reg = RegInit(0.U(32.W))
 
     val ctrl_MemWr_reg = RegInit(0.U(1.W))
@@ -106,7 +106,7 @@ class ID_EX extends Module {
         ctrl_OpA_sel_reg := io.ctrl_OpA_sel_in
         ctrl_OpB_sel_reg := io.ctrl_OpB_sel_in
         ctrl_nextPc_sel_reg := io.ctrl_nextPc_sel_in
-        csr_op_reg := io.csr_op_in
+//        csr_op_reg := io.csr_op_in
      //   M_extension_reg := io.M_extension_enabled_in
 
 
@@ -133,7 +133,7 @@ class ID_EX extends Module {
         io.ctrl_OpA_sel_out := ctrl_OpA_sel_reg
         io.ctrl_OpB_sel_out := ctrl_OpB_sel_reg
         io.ctrl_nextPc_sel_out := ctrl_nextPc_sel_reg
-        io.csr_op_o := csr_op_reg
+//        io.csr_op_o := csr_op_reg
     //     io.M_extension_enabled := M_extension_reg
         
    } .otherwise {
@@ -149,7 +149,7 @@ class ID_EX extends Module {
         io.func3_out := func3_reg
         io.func7_out := func7_reg
         io.inst_op_out := inst_op_reg
-        io.csr_op_o := csr_op_reg
+//        io.csr_op_o := csr_op_reg
 
         io.ctrl_MemWr_out := ctrl_MemWr_reg
         io.ctrl_MemRd_out := ctrl_MemRd_reg

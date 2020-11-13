@@ -153,9 +153,11 @@ class Core extends Module {
   decode.io.MEM_WB_ctrl_regWr                   :=      MEM_WB.io.ctrl_RegWr_out
   decode.io.MEM_WB_ctrl_csrWen                  :=      MEM_WB.io.ctrl_CsrWen_out
   decode.io.ID_EX_ctrl_csrWen                   :=      ID_EX.io.ctrl_CsrWen_out
-  decode.io.MEM_WB_csrAddr                      :=      MEM_WB.io.csr_addr_out(11,0).asUInt()
-  decode.io.ID_EX_ctrl_csrAddr                  :=      ID_EX.io.imm_out(11,0).asUInt()
-  decode.io.ID_EX_rs1_data                      :=      ID_EX.io.rs1_out
+  decode.io.EX_MEM_ctrl_csrWen                  :=      EX_MEM.io.ctrl_CsrWen_out
+//  decode.io.MEM_WB_csrAddr                      :=      MEM_WB.io.csr_addr_out(11,0).asUInt()
+//  decode.io.ID_EX_ctrl_csrAddr                  :=      ID_EX.io.imm_out(11,0).asUInt()
+//  decode.io.EX_MEM_ctrl_csrAddr                 :=      EX_MEM.io.csr_addr_out(11,0).asUInt()
+  //decode.io.ID_EX_rs1_data                      :=      ID_EX.io.rs1_out
   decode.io.MEM_WB_rd_sel                       :=      MEM_WB.io.rd_sel_out
   decode.io.ID_EX_ctrl_MemRd                    :=      ID_EX.io.ctrl_MemRd_out
   decode.io.ID_EX_rd_sel                        :=      ID_EX.io.rd_sel_out
@@ -163,17 +165,23 @@ class Core extends Module {
   decode.io.EX_MEM_ctrl_MemRd                   :=      EX_MEM.io.ctrl_MemRd_out
   decode.io.MEM_WB_ctrl_MemRd                   :=      MEM_WB.io.ctrl_MemRd_out
   decode.io.writeback_write_data                :=      writeback.io.write_data   // rs1 data
-  decode.io.MEM_WB_csr_rdata                    :=      MEM_WB.io.csr_data_out    // csr data
+  decode.io.MEM_WB_csr_rdata_i                    :=      MEM_WB.io.csr_data_out    // csr data
+  decode.io.EX_MEM_csr_rdata_i                  :=      EX_MEM.io.csr_data_o
+  decode.io.ID_EX_csr_rdata_i                   :=      ID_EX.io.csr_data_o
   decode.io.alu_output                          :=      execute.io.alu_output
   decode.io.EX_MEM_alu_output                   :=      EX_MEM.io.alu_output
+  decode.io.MEM_WB_alu_output                   :=      MEM_WB.io.alu_output
   decode.io.dmem_memOut                         :=      io.data_rdata_i
+  decode.io.dccm_rvalid_i                       :=      io.data_rvalid_i
   decode.io.fetch_csr_save_cause_i              :=      fetch.io.csrRegFile_csr_save_cause_o
   decode.io.fetch_exc_cause_i                   :=      fetch.io.csrRegFile_exc_cause_o
   decode.io.fetch_csr_save_if                   :=      fetch.io.csrRegFile_csr_save_if_o
   decode.io.fetch_csr_if_pc                     :=      fetch.io.csrRegFile_csr_if_pc_o
   decode.io.fetch_csr_mtvec_init                :=      fetch.io.csrRegFile_csr_mtvec_init_o
-  decode.io.MEM_WB_csr_op                       :=      MEM_WB.io.csr_op_out
+//  decode.io.MEM_WB_csr_op                       :=      MEM_WB.io.csr_op_out
   decode.io.irq_external_i                      :=      io.irq_external_i
+  decode.io.ID_EX_ctrl_regWr                    :=      ID_EX.io.ctrl_RegWr_out
+  decode.io.EX_MEM_ctrl_regWr                   :=      EX_MEM.io.ctrl_RegWr_out
 
   ID_EX.io.stall                                :=      stall
   ID_EX.io.ctrl_MemWr_in                        :=      decode.io.ctrl_MemWr_out
@@ -190,7 +198,7 @@ class Core extends Module {
   ID_EX.io.rs1_in                               :=      decode.io.rs1_out
   ID_EX.io.rs2_in                               :=      decode.io.rs2_out
   ID_EX.io.imm                                  :=      decode.io.imm_out
-  ID_EX.io.csr_op_in                            :=      decode.io.csr_op_o
+//  ID_EX.io.csr_op_in                            :=      decode.io.csr_op_o
   ID_EX.io.csr_data_i                           :=      decode.io.csr_rdata_o
 
   ID_EX.io.pc_in                                :=      decode.io.pc_out
@@ -233,7 +241,7 @@ class Core extends Module {
   execute.io.ID_EX_ctrl_RegWr                   :=      ID_EX.io.ctrl_RegWr_out
   execute.io.ID_EX_ctrl_CsrWen                  :=      ID_EX.io.ctrl_CsrWen_out
   execute.io.ID_EX_ctrl_MemToReg                :=      ID_EX.io.ctrl_MemToReg_out
-  execute.io.ID_EX_csr_op                       :=      ID_EX.io.csr_op_o
+//  execute.io.ID_EX_csr_op                       :=      ID_EX.io.csr_op_o
   execute.io.ID_EX_csr_data                     :=      ID_EX.io.csr_data_o
 
   EX_MEM.io.stall                               :=      stall
@@ -246,8 +254,8 @@ class Core extends Module {
   EX_MEM.io.rs2_in                              :=      execute.io.rs2_out
   EX_MEM.io.EX_MEM_func3                        :=      execute.io.func3_out
   EX_MEM.io.ctrl_CsrWen_in                      :=      execute.io.ctrl_CsrWe_out
-  EX_MEM.io.csr_addr_in                         :=      execute.io.csr_addr_out
-  EX_MEM.io.csr_op_in                           :=      execute.io.csr_op_o
+//  EX_MEM.io.csr_addr_in                         :=      execute.io.csr_addr_out
+//  EX_MEM.io.csr_op_in                           :=      execute.io.csr_op_o
   EX_MEM.io.csr_data_i                          :=      execute.io.csr_data_o
 
 
@@ -270,8 +278,8 @@ class Core extends Module {
   memory_stage.io.EX_MEM_MemWr                  :=      EX_MEM.io.ctrl_MemWr_out
   memory_stage.io.EX_MEM_rs2                    :=      EX_MEM.io.rs2_out
   memory_stage.io.func3                         :=      EX_MEM.io.EX_MEM_func3_out
-  memory_stage.io.EX_MEM_csr_addr               :=      EX_MEM.io.csr_addr_out
-  memory_stage.io.EX_MEM_csr_op                 :=      EX_MEM.io.csr_op_out
+//  memory_stage.io.EX_MEM_csr_addr               :=      EX_MEM.io.csr_addr_out
+//  memory_stage.io.EX_MEM_csr_op                 :=      EX_MEM.io.csr_op_out
   memory_stage.io.EX_MEM_csr_data               :=      EX_MEM.io.csr_data_o
 
   memory_stage.io.data_gnt_i                    :=      io.data_gnt_i
@@ -294,8 +302,8 @@ class Core extends Module {
   MEM_WB.io.ctrl_CsrWen_in                      :=      memory_stage.io.ctrl_CsrWen_out
   MEM_WB.io.ctrl_MemRd_in                       :=      memory_stage.io.ctrl_MemRd_out
   MEM_WB.io.ctrl_MemToReg_in                    :=      memory_stage.io.ctrl_MemToReg_out
-  MEM_WB.io.csr_addr_in                         :=      memory_stage.io.csr_addr_out
-  MEM_WB.io.csr_op_in                           :=      memory_stage.io.csr_op_out
+//  MEM_WB.io.csr_addr_in                         :=      memory_stage.io.csr_addr_out
+//  MEM_WB.io.csr_op_in                           :=      memory_stage.io.csr_op_out
   MEM_WB.io.csr_data_in                         :=      memory_stage.io.csr_data_out
 
   // *********** ----------- WRITE BACK (WB) STAGE ----------- ********* //

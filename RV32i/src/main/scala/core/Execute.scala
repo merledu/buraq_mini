@@ -20,7 +20,7 @@ class Execute extends Module {
     val EX_MEM_alu_output = Input(SInt(32.W))
     val writeback_write_data = Input(SInt(32.W))
     val ID_EX_imm = Input(SInt(32.W))
-    val ID_EX_csr_op = Input(UInt(2.W))
+//    val ID_EX_csr_op = Input(UInt(2.W))
     val ID_EX_ctrl_AluOp = Input(UInt(4.W))
     val ID_EX_func7 = Input(UInt(7.W))
     val ID_EX_inst_op = Input(UInt(7.W))
@@ -45,7 +45,7 @@ class Execute extends Module {
     val ctrl_MemToReg_out = Output(UInt(1.W))
     val func3_out        = Output(UInt(3.W))
     val csr_addr_out = Output(SInt(32.W))
-    val csr_op_o = Output(UInt(2.W))
+//    val csr_op_o = Output(UInt(2.W))
     val csr_data_o = Output(UInt(32.W))
   })
 
@@ -136,7 +136,7 @@ class Execute extends Module {
   io.ctrl_CsrWe_out := io.ID_EX_ctrl_CsrWen
   io.ctrl_MemToReg_out := io.ID_EX_ctrl_MemToReg
   io.csr_addr_out := io.ID_EX_imm
-  io.csr_op_o := io.ID_EX_csr_op
+//  io.csr_op_o := io.ID_EX_csr_op
   io.csr_data_o := io.ID_EX_csr_data
 
 

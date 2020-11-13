@@ -14,8 +14,8 @@ class EX_MEM extends Module {
         val rs2_sel_in = Input(UInt(5.W))
         val alu_in = Input(SInt(32.W))
         val EX_MEM_func3 = Input(UInt(3.W))
-        val csr_addr_in = Input(SInt(32.W))
-        val csr_op_in = Input(UInt(2.W))
+//        val csr_addr_in = Input(SInt(32.W))
+//        val csr_op_in = Input(UInt(2.W))
         val csr_data_i = Input(UInt(32.W))
 
         val stall = Input(UInt(1.W))
@@ -30,8 +30,8 @@ class EX_MEM extends Module {
         val rs2_sel_out = Output(UInt(5.W))
         val alu_output = Output(SInt(32.W))
         val EX_MEM_func3_out  = Output(UInt(3.W))
-        val csr_addr_out = Output(SInt(32.W))
-        val csr_op_out = Output(UInt(2.W))
+//        val csr_addr_out = Output(SInt(32.W))
+//        val csr_op_out = Output(UInt(2.W))
         val csr_data_o = Output(UInt(32.W))
     })
         val reg_memWr = RegInit(0.U(1.W))
@@ -44,8 +44,8 @@ class EX_MEM extends Module {
         val reg_rs2_sel = RegInit(0.U(5.W))
         val reg_alu_output = RegInit(0.S(32.W))
         val reg_func3      = RegInit(0.U(3.W))
-        val reg_csr_addr   = RegInit(0.S(32.W))
-        val reg_csr_op = RegInit(0.U(2.W))
+//        val reg_csr_addr   = RegInit(0.S(32.W))
+//        val reg_csr_op = RegInit(0.U(2.W))
         val reg_csr_data = RegInit(0.U(32.W))
 
     when(io.stall =/= 1.U) {
@@ -59,8 +59,8 @@ class EX_MEM extends Module {
         reg_rs2_sel := io.rs2_sel_in
         reg_alu_output := io.alu_in
         reg_func3      := io.EX_MEM_func3
-        reg_csr_addr    := io.csr_addr_in
-        reg_csr_op := io.csr_op_in
+//        reg_csr_addr    := io.csr_addr_in
+//        reg_csr_op := io.csr_op_in
         reg_csr_data := io.csr_data_i
 
     } .otherwise {
@@ -74,8 +74,8 @@ class EX_MEM extends Module {
         reg_rs2_sel :=  reg_rs2_sel
         reg_alu_output := reg_alu_output
         reg_func3     := reg_func3
-        reg_csr_addr := reg_csr_addr
-        reg_csr_op := reg_csr_op
+//        reg_csr_addr := reg_csr_addr
+//        reg_csr_op := reg_csr_op
         reg_csr_data := reg_csr_data
     }
 
@@ -89,7 +89,7 @@ class EX_MEM extends Module {
     io.rs2_sel_out := reg_rs2_sel
     io.alu_output := reg_alu_output
     io.EX_MEM_func3_out := reg_func3
-    io.csr_addr_out := reg_csr_addr
-    io.csr_op_out := reg_csr_op
+//    io.csr_addr_out := reg_csr_addr
+//    io.csr_op_out := reg_csr_op
     io.csr_data_o := reg_csr_data
 }
