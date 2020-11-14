@@ -45,7 +45,7 @@ class CsrControlUnit extends Module {
   val csr_hazard_in_decode_writeback = Wire(Bool())
 
   hazard_in_decode_execute   := Mux(io.reg_wr_in_execute && io.csr_inst_in_decode && io.rd_sel_in_execute =/= 0.U && ~io.csr_wr_in_execute && (io.rd_sel_in_execute === io.rs1_sel_in_decode), true.B, false.B)
-  hazard_in_decode_memory    := Mux(io.reg_wr_in_memory && io.csr_inst_in_decode && io.rd_sel_in_memory =/= 0.U  && ~hazard_in_decode_execute && ~io.csr_wr_in_memory (io.rd_sel_in_memory === io.rs1_sel_in_decode), true.B, false.B)
+  hazard_in_decode_memory    := Mux(io.reg_wr_in_memory && io.csr_inst_in_decode && io.rd_sel_in_memory =/= 0.U  && ~hazard_in_decode_execute && ~io.csr_wr_in_memory && (io.rd_sel_in_memory === io.rs1_sel_in_decode), true.B, false.B)
   hazard_in_decode_writeback := Mux(io.reg_wr_in_writeback && io.csr_inst_in_decode && io.rd_sel_in_writeback =/= 0.U && ~hazard_in_decode_execute && ~hazard_in_decode_memory && ~io.csr_wr_in_writeback&& (io.rd_sel_in_writeback === io.rs1_sel_in_decode), true.B, false.B)
 
   csr_hazard_in_decode_execute := Mux(io.reg_wr_in_execute && io.csr_inst_in_decode && io.rd_sel_in_execute =/= 0.U && io.csr_wr_in_execute && (io.rd_sel_in_execute === io.rs1_sel_in_decode), true.B, false.B)
