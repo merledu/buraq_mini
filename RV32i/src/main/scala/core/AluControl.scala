@@ -31,7 +31,7 @@ class AluControl extends Module {
     .elsewhen(AluOP.BLT) { io.output := 20.U}
     .elsewhen(AluOP.BGE) { io.output := 21.U}
     .elsewhen(AluOP.BGEU){ io.output := 23.U}
-    .elsewhen(AluOP.JAL || AluOP.JALR || AluOP.CSRRW) { io.output := 31.U}
+    .elsewhen(AluOP.JAL || AluOP.JALR || AluOP.CSRRW || AluOP.CSRRS || AluOP.CSRRC || AluOP.CSRRWI || AluOP.CSRRSI || AluOP.CSRRCI) { io.output := 31.U}  //making the ALU pass operand a on output
     .elsewhen(AluOP.MUL) { io.output := 30.U}
     .elsewhen(AluOP.DIV) { io.output := 29.U}
     .elsewhen(AluOP.DIVU){ io.output := 27.U}

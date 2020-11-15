@@ -13,6 +13,7 @@ class Control extends Module {
         val out_memRead = Output(UInt(1.W))
         val out_regWrite = Output(UInt(1.W))
         val csr_we_o = Output(Bool())
+        val csr_imm_type = Output(Bool())
         val csr_op_o = Output(UInt(2.W))
         val out_memToReg = Output(UInt(1.W))
         val out_aluOp = Output(UInt(4.W))
@@ -37,6 +38,7 @@ class Control extends Module {
     control_decode.io.Auipc       := instruction_type_decode.io.Auipc
     control_decode.io.multiply    := instruction_type_decode.io.multiply
     control_decode.io.in_csr_type := instruction_type_decode.io.csr_type
+    control_decode.io.in_csr_imm_type := instruction_type_decode.io.csr_imm_type
     
     io.out_memWrite := control_decode.io.memWrite
     io.out_branch := control_decode.io.branch
@@ -52,5 +54,6 @@ class Control extends Module {
 //    instruction_type_decode.io.enable_M_extension := io.enable_M_extension 
  //   io.M_extension_enabled := control_decode.io.M_extension_enabled
     io.csr_op_o := instruction_type_decode.io.csr_op
+    io.csr_imm_type := instruction_type_decode.io.csr_imm_type
     instruction_type_decode.io.func7 := io.func7
 }

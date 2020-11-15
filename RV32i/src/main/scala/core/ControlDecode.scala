@@ -14,6 +14,7 @@ class ControlDecode extends Module {
         val in_jal_type = Input(UInt(1.W))
         val in_lui_type = Input(UInt(1.W))
         val in_csr_type = Input(UInt(1.W))
+        val in_csr_imm_type = Input(UInt(1.W))
         val Auipc       = Input(UInt(1.W))
         val multiply    = Input(UInt(1.W))
         // Outputs
@@ -154,6 +155,18 @@ class ControlDecode extends Module {
         io.next_pc_sel := "b00".U
      //   io.M_extension_enabled := 1.U
     } .elsewhen(io.in_csr_type === 1.U) {
+        io.memWrite := 0.U
+        io.memRead := 0.U
+        io.branch := 0.U
+        io.regWrite := 1.U
+        io.csr_wen := true.B
+        io.memToReg := 0.U
+        io.aluOperation := "b1000".U
+        io.operand_a_sel := "b00".U
+        io.operand_b_sel := 1.U
+        io.extend_sel := "b00".U
+        io.next_pc_sel := "b00".U
+    } .elsewhen(io.in_csr_imm_type === 1.U) {
         io.memWrite := 0.U
         io.memRead := 0.U
         io.branch := 0.U
