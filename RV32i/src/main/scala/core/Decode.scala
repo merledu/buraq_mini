@@ -114,14 +114,10 @@ class Decode extends Module {
   csrRegFile.io.i_hart_id := 0.U
   csrRegFile.io.i_boot_addr := 0.U
   csrRegFile.io.i_csr_mtvec_init := io.fetch_csr_mtvec_init
-  //  csrRegFile.io.i_csr_access                    :=      io.MEM_WB_ctrl_csrWen
   csrRegFile.io.i_csr_access := control.io.csr_we_o   // used for checking illegal instructions in csr register file
-  //  csrRegFile.io.i_csr_wdata                     :=      io.writeback_write_data.asUInt()  // data from rs1
   csrRegFile.io.i_csr_wdata := csr_wdata // data read from rs1 register (May need to resolve hazards if rs1 is not yet written with updated value from the instruction in pipe
   csrRegFile.io.i_csr_op := control.io.csr_op_o
-  //  csrRegFile.io.i_csr_op_en                     :=      io.MEM_WB_ctrl_csrWen   // right now the operation enables when csr instruction is in writeback stage
   csrRegFile.io.i_csr_op_en := csrControlUnit.io.csr_op_en_o // enabling write/set/clear  operation when csr instruction in decode stage
-  //  csrRegFile.io.i_csr_addr                      :=      Mux(io.MEM_WB_ctrl_csrWen, io.MEM_WB_csrAddr, io.IF_ID_inst(31,20)) // if instruction in wb stage wants to write use that address else use the current imm value to read the csr
   csrRegFile.io.i_csr_addr := io.IF_ID_inst(31, 20) // reading the imm value to use as csr address
   csrRegFile.io.i_irq_software := false.B
   csrRegFile.io.i_irq_timer := false.B
@@ -171,13 +167,8 @@ class Decode extends Module {
   csrControlUnit.io.csr_wr_in_execute := io.ID_EX_ctrl_csrWen
   csrControlUnit.io.csr_wr_in_memory := io.EX_MEM_ctrl_csrWen
   csrControlUnit.io.csr_wr_in_writeback := io.MEM_WB_ctrl_csrWen
-  //  csrHazardUnit.io.EX_MEM_csrWen := io.EX_MEM_ctrl_csrWen
-  //  csrHazardUnit.io.EX_MEM_csrAddr := io.EX_MEM_ctrl_csrAddr
-  //  csrHazardUnit.io.MEM_WB_csrWen  := io.MEM_WB_ctrl_csrWen
-  //  csrHazardUnit.io.MEM_WB_csrAddr := io.MEM_WB_csrAddr
-  //  csrHazardUnit.io.csr_addr_in_decode := io.IF_ID_inst(31,20)
-  //  csrHazardUnit.io.csr_wen_in_decode := control.io.csr_we_o
-  //csrHazardUnit.io.ID_EX_rd_sel := io.ID_EX_rd_sel
+  csrControlUnit.io.csr_imm_inst_in_decode := control.io.csr_imm_type
+
 
   // Initialize Hazard Detection unit
   hazardDetection.io.IF_ID_INST := io.IF_ID_inst
@@ -322,7 +313,6 @@ class Decode extends Module {
   reg_file.io.rs1_sel := io.IF_ID_inst(19, 15)
   reg_file.io.rs2_sel := io.IF_ID_inst(24, 20)
   reg_file.io.regWrite := io.MEM_WB_ctrl_regWr
-  //  reg_file.io.stall := io.stall
   reg_file.io.rd_sel := io.MEM_WB_rd_sel
   reg_file.io.writeData := Mux(io.MEM_WB_ctrl_csrWen, io.MEM_WB_csr_rdata_i.asSInt(), io.writeback_write_data)
 
@@ -342,10 +332,7 @@ class Decode extends Module {
   structuralDetector.io.MEM_WB_REGRD := io.MEM_WB_rd_sel
   structuralDetector.io.MEM_WB_regWr := io.MEM_WB_ctrl_regWr
   structuralDetector.io.inst_op_in := io.IF_ID_inst(6, 0)
-  //structuralDetector.io.MEM_WB_csrAddr := io.MEM_WB_csrAddr
-  //structuralDetector.io.MEM_WB_csrWen := io.MEM_WB_ctrl_csrWen
-  //structuralDetector.io.csr_addr_in_decode := imm_out(11,0)
-  //structuralDetector.io.is_csr_inst_in_decode := control.io.csr_we_o
+
   // FOR RS1
   when(structuralDetector.io.fwd_rs1 === 1.U) {
     // additionally checking if the instruction is lui or not. We should not pass out
@@ -422,25 +409,30 @@ class Decode extends Module {
 
   io.imm_out := imm_out
 
-  when(csrControlUnit.io.forward_rs1 === 1.U) {
-    csr_wdata := io.alu_output.asUInt()
-  }.elsewhen(csrControlUnit.io.forward_rs1 === 2.U) {
-    // hazard in memory stage. If load instruction in memory stage then forward data read from memory
-    // else forward alu output data from EX/MEM pipeline register
-    csr_wdata := Mux(io.EX_MEM_ctrl_MemRd === 1.U, io.dmem_memOut.asUInt(), io.EX_MEM_alu_output.asUInt())
-  }.elsewhen(csrControlUnit.io.forward_rs1 === 3.U) {
-    csr_wdata := io.writeback_write_data.asUInt()
-  }.elsewhen(csrControlUnit.io.forward_rs1 === 4.U) {
-    // csr hazard in excute stage
-    csr_wdata := io.ID_EX_csr_rdata_i
-  }.elsewhen(csrControlUnit.io.forward_rs1 === 5.U) {
-    // csr hazard in memory stage
-    csr_wdata := io.EX_MEM_csr_rdata_i
-  }.elsewhen(csrControlUnit.io.forward_rs1 === 6.U) {
-    csr_wdata := io.MEM_WB_csr_rdata_i
-  }.otherwise {
-    csr_wdata := reg_file.io.rs1.asUInt()
+  when(control.io.csr_imm_type === 1.U) {
+    csr_wdata := io.IF_ID_inst(19,15)   // selecting the imm encoded inside the rs1 field and writing to csr reg file
+  } .otherwise {
+    when(csrControlUnit.io.forward_rs1 === 1.U) {
+      csr_wdata := io.alu_output.asUInt()
+    }.elsewhen(csrControlUnit.io.forward_rs1 === 2.U) {
+      // hazard in memory stage. If load instruction in memory stage then forward data read from memory
+      // else forward alu output data from EX/MEM pipeline register
+      csr_wdata := Mux(io.EX_MEM_ctrl_MemRd === 1.U, io.dmem_memOut.asUInt(), io.EX_MEM_alu_output.asUInt())
+    }.elsewhen(csrControlUnit.io.forward_rs1 === 3.U) {
+      csr_wdata := io.writeback_write_data.asUInt()
+    }.elsewhen(csrControlUnit.io.forward_rs1 === 4.U) {
+      // csr hazard in excute stage
+      csr_wdata := io.ID_EX_csr_rdata_i
+    }.elsewhen(csrControlUnit.io.forward_rs1 === 5.U) {
+      // csr hazard in memory stage
+      csr_wdata := io.EX_MEM_csr_rdata_i
+    }.elsewhen(csrControlUnit.io.forward_rs1 === 6.U) {
+      csr_wdata := io.MEM_WB_csr_rdata_i
+    }.otherwise {
+      csr_wdata := reg_file.io.rs1.asUInt()
+    }
   }
+
 
   io.csr_rdata_o := csrRegFile.io.o_csr_rdata
 

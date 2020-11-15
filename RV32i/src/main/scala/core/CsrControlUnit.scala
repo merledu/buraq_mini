@@ -18,6 +18,10 @@ class CsrControlUnit extends Module {
     val rs1_sel_in_decode = Input(UInt(5.W))
     val csr_inst_in_decode = Input(Bool())
 
+    // this indicates that the csr instruction in decode is of imm type and we do not need to forward
+    // the data since rs1 does not exist in this case.
+    val csr_imm_inst_in_decode = Input(Bool())
+
     // this indicates load inst is present in execution stage. Since the CSR hazard unit would detect decode/execute
     // dependency and forward alu output, this would be incorrect in case of a load instruction since the data
     // wont be ready yet and alu output is used for the address calculation
@@ -44,13 +48,13 @@ class CsrControlUnit extends Module {
   val csr_hazard_in_decode_memory = Wire(Bool())
   val csr_hazard_in_decode_writeback = Wire(Bool())
 
-  hazard_in_decode_execute   := Mux(io.reg_wr_in_execute && io.csr_inst_in_decode && io.rd_sel_in_execute =/= 0.U && ~io.csr_wr_in_execute && (io.rd_sel_in_execute === io.rs1_sel_in_decode), true.B, false.B)
-  hazard_in_decode_memory    := Mux(io.reg_wr_in_memory && io.csr_inst_in_decode && io.rd_sel_in_memory =/= 0.U  && ~hazard_in_decode_execute && ~io.csr_wr_in_memory && (io.rd_sel_in_memory === io.rs1_sel_in_decode), true.B, false.B)
-  hazard_in_decode_writeback := Mux(io.reg_wr_in_writeback && io.csr_inst_in_decode && io.rd_sel_in_writeback =/= 0.U && ~hazard_in_decode_execute && ~hazard_in_decode_memory && ~io.csr_wr_in_writeback&& (io.rd_sel_in_writeback === io.rs1_sel_in_decode), true.B, false.B)
+  hazard_in_decode_execute   := Mux(io.reg_wr_in_execute && io.csr_inst_in_decode && ~io.csr_imm_inst_in_decode && io.rd_sel_in_execute =/= 0.U && ~io.csr_wr_in_execute && (io.rd_sel_in_execute === io.rs1_sel_in_decode), true.B, false.B)
+  hazard_in_decode_memory    := Mux(io.reg_wr_in_memory && io.csr_inst_in_decode && ~io.csr_imm_inst_in_decode && io.rd_sel_in_memory =/= 0.U  && ~hazard_in_decode_execute && ~io.csr_wr_in_memory && (io.rd_sel_in_memory === io.rs1_sel_in_decode), true.B, false.B)
+  hazard_in_decode_writeback := Mux(io.reg_wr_in_writeback && io.csr_inst_in_decode && ~io.csr_imm_inst_in_decode && io.rd_sel_in_writeback =/= 0.U && ~hazard_in_decode_execute && ~hazard_in_decode_memory && ~io.csr_wr_in_writeback&& (io.rd_sel_in_writeback === io.rs1_sel_in_decode), true.B, false.B)
 
-  csr_hazard_in_decode_execute := Mux(io.reg_wr_in_execute && io.csr_inst_in_decode && io.rd_sel_in_execute =/= 0.U && io.csr_wr_in_execute && (io.rd_sel_in_execute === io.rs1_sel_in_decode), true.B, false.B)
-  csr_hazard_in_decode_memory := Mux(io.reg_wr_in_memory && io.csr_inst_in_decode && io.rd_sel_in_memory =/= 0.U && io.csr_wr_in_memory && ~csr_hazard_in_decode_execute && (io.rd_sel_in_memory === io.rs1_sel_in_decode), true.B, false.B)
-  csr_hazard_in_decode_writeback := Mux(io.reg_wr_in_writeback && io.csr_inst_in_decode && io.rd_sel_in_writeback =/= 0.U && io.csr_wr_in_writeback && ~csr_hazard_in_decode_execute && ~csr_hazard_in_decode_memory && (io.rd_sel_in_writeback === io.rs1_sel_in_decode), true.B, false.B)
+  csr_hazard_in_decode_execute := Mux(io.reg_wr_in_execute && io.csr_inst_in_decode && ~io.csr_imm_inst_in_decode && io.rd_sel_in_execute =/= 0.U && io.csr_wr_in_execute && (io.rd_sel_in_execute === io.rs1_sel_in_decode), true.B, false.B)
+  csr_hazard_in_decode_memory := Mux(io.reg_wr_in_memory && io.csr_inst_in_decode && ~io.csr_imm_inst_in_decode && io.rd_sel_in_memory =/= 0.U && io.csr_wr_in_memory && ~csr_hazard_in_decode_execute && (io.rd_sel_in_memory === io.rs1_sel_in_decode), true.B, false.B)
+  csr_hazard_in_decode_writeback := Mux(io.reg_wr_in_writeback && io.csr_inst_in_decode && ~io.csr_imm_inst_in_decode &&  io.rd_sel_in_writeback =/= 0.U && io.csr_wr_in_writeback && ~csr_hazard_in_decode_execute && ~csr_hazard_in_decode_memory && (io.rd_sel_in_writeback === io.rs1_sel_in_decode), true.B, false.B)
   // hazard in decode/execute stage
   when(hazard_in_decode_execute) {
     io.forward_rs1 := "b001".U
