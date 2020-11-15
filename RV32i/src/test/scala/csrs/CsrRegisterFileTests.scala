@@ -1,7 +1,7 @@
 package csrs
 import chisel3._
 import chisel3.iotesters.PeekPokeTester
-import main.scala.core.csrs.{CsrRegisterFile, Exc_Cause}
+import main.scala.core.csrs.{CsrAddressMap, CsrRegisterFile, Exc_Cause}
 
 class CsrRegisterFileTests(c: CsrRegisterFile) extends PeekPokeTester(c) {
   // default values
@@ -37,14 +37,12 @@ class CsrRegisterFileTests(c: CsrRegisterFile) extends PeekPokeTester(c) {
   poke(c.io.i_mem_store, false.B)
   poke(c.io.i_dside_wait, false.B)
   step(3)
-  poke(c.io.i_csr_access, true.B)
-  poke(c.io.i_csr_addr, "h300".U)
-  poke(c.io.i_csr_wdata, "h00001880".U)
-  poke(c.io.i_csr_op, 2.U)
+  poke(c.io.i_csr_addr, CsrAddressMap.MSTATUS)
+  poke(c.io.i_csr_wdata, "h00000f".U)
+  poke(c.io.i_csr_op, 3.U)
   poke(c.io.i_csr_op_en, true.B)
  step(1)
-  poke(c.io.i_csr_access, true.B)
-  poke(c.io.i_csr_addr, "h300".U)
+  poke(c.io.i_csr_addr, CsrAddressMap.MSTATUS)
   poke(c.io.i_csr_op, 0.U)
   poke(c.io.i_csr_op_en, true.B)
   step(4)

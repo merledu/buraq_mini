@@ -180,6 +180,18 @@ class CsrRegisterFile extends Module {
   mstatus_d.mpp  := mstatus_q.mpp
   mstatus_d.mprv := mstatus_q.mprv
   mstatus_d.tw   := mstatus_q.tw
+  mscratch_en:= "b0".U
+  mie_en     := "b0".U
+  mepc_en    := "b0".U
+  mcause_en  := "b0".U
+  mtval_en   := "b0".U
+  depc_en    := "b0".U
+  dscratch0_en := "b0".U
+  dscratch1_en := "b0".U
+  dcsr_en    := "b0".U
+  mcountinhibit_we := "b0".U
+  mhpmcounter_we   := 0.U
+  mhpmcounterh_we  := 0.U
 
   // The standard RISC-V ISA sets aside a 12-bit encoding space (csr[11:0]) for up to 4,096 CSRs.
   // By convention, the upper 4 bits of the CSR address (csr[11:8]) are used to encode the read and
@@ -475,13 +487,8 @@ class CsrRegisterFile extends Module {
   priv_lvl_d := priv_lvl_q.asUInt
 
 
-  mie_en     := "b0".U
-  mscratch_en:= "b0".U
-  mepc_en    := "b0".U
   mepc_d     := Cat(csr_wdata_int(31,1), "b0".U)
-  mcause_en  := "b0".U
   mcause_d   := Cat(csr_wdata_int(31), csr_wdata_int(4,0))
-  mtval_en   := "b0".U
   mtval_d    := csr_wdata_int
   mtvec_en   := io.i_csr_mtvec_init
 
@@ -490,16 +497,9 @@ class CsrRegisterFile extends Module {
     "b0".U(6.W), "b01".U), Cat(csr_wdata_int(31,8),
     "b0".U(6.W), "b01".U))
 
-  dcsr_en    := "b0".U
   dcsr_d     := dcsr_q
   depc_d     := Cat(csr_wdata_int(31,1), "b0".U)
-  depc_en    := "b0".U
-  dscratch0_en := "b0".U
-  dscratch1_en := "b0".U
 
-  mcountinhibit_we := "b0".U
-  mhpmcounter_we   := 0.U
-  mhpmcounterh_we  := 0.U
 
   exception_pc := io.i_pc_id
 
