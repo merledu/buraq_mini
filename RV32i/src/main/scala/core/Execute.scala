@@ -9,6 +9,7 @@ class Execute extends Module {
     val ID_EX_rs1_sel = Input(UInt(5.W))
     val ID_EX_rs2_sel = Input(UInt(5.W))
     val EX_MEM_ctrl_RegWr = Input(UInt(1.W))
+    val EX_MEM_ctrl_csrWen = Input(Bool())    // used to detect if csr instruction in memory stage
     val MEM_WB_ctrl_RegWr = Input(UInt(1.W))
     val ID_EX_ctrl_OpA_sel = Input(UInt(2.W))
     val ID_EX_ctrl_OpB_sel = Input(UInt(1.W))
@@ -18,6 +19,7 @@ class Execute extends Module {
     val ID_EX_rs2 = Input(SInt(32.W))
     val ID_EX_csr_data = Input(UInt(32.W))
     val EX_MEM_alu_output = Input(SInt(32.W))
+    val EX_MEM_csr_rdata = Input(UInt(32.W))  // used to forward csr data if instruction is dependent on csr inst in memory stage
     val writeback_write_data = Input(SInt(32.W))
     val ID_EX_imm = Input(SInt(32.W))
 //    val ID_EX_csr_op = Input(UInt(2.W))
@@ -89,7 +91,7 @@ class Execute extends Module {
     when(forwardUnit.io.forward_b === "b00".U) {
       io.rs2_out := io.ID_EX_rs2
     } .elsewhen(forwardUnit.io.forward_b === "b01".U) {
-      io.rs2_out := io.EX_MEM_alu_output
+      io.rs2_out := Mux(io.EX_MEM_ctrl_csrWen, io.EX_MEM_csr_rdata.asSInt(), io.EX_MEM_alu_output)
     } .elsewhen(forwardUnit.io.forward_b === "b10".U) {
       io.rs2_out := io.writeback_write_data
     } .otherwise {
