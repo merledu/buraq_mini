@@ -223,6 +223,7 @@ class Core extends Module {
   execute.io.ID_EX_rs2_sel                      :=      ID_EX.io.rs2_sel_out
   execute.io.EX_MEM_ctrl_RegWr                  :=      EX_MEM.io.ctrl_RegWr_out
   execute.io.EX_MEM_ctrl_csrWen                 :=      EX_MEM.io.ctrl_CsrWen_out
+  execute.io.MEM_WB_ctrl_csrWen                 :=      MEM_WB.io.ctrl_CsrWen_out
   execute.io.MEM_WB_ctrl_RegWr                  :=      MEM_WB.io.ctrl_RegWr_out
   execute.io.ID_EX_ctrl_OpA_sel                 :=      ID_EX.io.ctrl_OpA_sel_out
   execute.io.ID_EX_ctrl_OpB_sel                 :=      ID_EX.io.ctrl_OpB_sel_out
@@ -231,6 +232,7 @@ class Core extends Module {
   execute.io.ID_EX_rs2                          :=      ID_EX.io.rs2_out
   execute.io.EX_MEM_alu_output                  :=      EX_MEM.io.alu_output
   execute.io.EX_MEM_csr_rdata                   :=      EX_MEM.io.csr_data_o
+  execute.io.MEM_WB_csr_rdata                   :=      MEM_WB.io.csr_data_out
   execute.io.writeback_write_data               :=      writeback.io.write_data
   execute.io.ID_EX_imm                          :=      ID_EX.io.imm_out
   execute.io.ID_EX_ctrl_AluOp                   :=      ID_EX.io.ctrl_AluOp_out
