@@ -79,9 +79,9 @@ class Execute extends Module {
     when(forwardUnit.io.forward_a === "b00".U) {
       alu.io.oper_a := io.ID_EX_rs1
     } .elsewhen(forwardUnit.io.forward_a === "b01".U) {
-      alu.io.oper_a := io.EX_MEM_alu_output
+      alu.io.oper_a := Mux(io.EX_MEM_ctrl_csrWen, io.EX_MEM_csr_rdata, io.EX_MEM_alu_output)
     } .elsewhen(forwardUnit.io.forward_a === "b10".U) {
-      alu.io.oper_a := io.writeback_write_data
+      alu.io.oper_a := Mux(io.MEM_WB_ctrl_csrWen, io.MEM_WB_csr_rdata, io.writeback_write_data)
     } .otherwise {
       alu.io.oper_a := io.ID_EX_rs1
     }
@@ -106,11 +106,11 @@ class Execute extends Module {
       alu.io.oper_b := io.ID_EX_rs2
       io.rs2_out := io.ID_EX_rs2
     } .elsewhen(forwardUnit.io.forward_b === "b01".U) {
-      alu.io.oper_b := io.EX_MEM_alu_output
-      io.rs2_out := io.EX_MEM_alu_output
+      alu.io.oper_b := Mux(io.EX_MEM_ctrl_csrWen, io.EX_MEM_csr_rdata, io.EX_MEM_alu_output)
+      io.rs2_out := Mux(io.EX_MEM_ctrl_csrWen, io.EX_MEM_csr_rdata, io.EX_MEM_alu_output)
     } .elsewhen(forwardUnit.io.forward_b === "b10".U) {
-      alu.io.oper_b := io.writeback_write_data
-      io.rs2_out := io.writeback_write_data
+      alu.io.oper_b := Mux(io.MEM_WB_ctrl_csrWen, io.MEM_WB_csr_rdata, io.writeback_write_data)
+      io.rs2_out := Mux(io.MEM_WB_ctrl_csrWen, io.MEM_WB_csr_rdata, io.writeback_write_data)
     } .otherwise {
       alu.io.oper_b := io.ID_EX_rs2
       io.rs2_out := io.ID_EX_rs2
