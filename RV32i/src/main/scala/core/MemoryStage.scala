@@ -8,11 +8,15 @@ class MemoryStage extends Module {
     val EX_MEM_alu_output = Input(SInt(32.W))
     val EX_MEM_rd_sel = Input(UInt(5.W))
     val EX_MEM_RegWr = Input(UInt(1.W))
+    val EX_MEM_CsrWe = Input(Bool())
     val EX_MEM_MemRd = Input(UInt(1.W))
     val EX_MEM_MemToReg = Input(UInt(1.W))
     val EX_MEM_MemWr = Input(UInt(1.W))
     val EX_MEM_rs2 = Input(SInt(32.W))
     val func3      = Input(UInt(3.W))
+//    val EX_MEM_csr_addr = Input(SInt(32.W))
+//    val EX_MEM_csr_op = Input(UInt(2.W))
+    val EX_MEM_csr_data = Input(UInt(32.W))
 
     val data_gnt_i   = Input(Bool())
     val data_rvalid_i= Input(Bool())
@@ -28,8 +32,12 @@ class MemoryStage extends Module {
     val alu_output = Output(SInt(32.W))
     val rd_sel_out = Output(UInt(5.W))
     val ctrl_RegWr_out = Output(UInt(1.W))
+    val ctrl_CsrWen_out = Output(Bool())
     val ctrl_MemRd_out = Output(UInt(1.W))
     val ctrl_MemToReg_out = Output(UInt(1.W))
+//    val csr_addr_out = Output(SInt(32.W))
+//    val csr_op_out = Output(UInt(2.W))
+    val csr_data_out = Output(UInt(32.W))
 
     val stall = Output(Bool())
   })
@@ -229,19 +237,20 @@ class MemoryStage extends Module {
 
   /** ******************************************START****************************************************** */
 
+  io.memAddress := io.EX_MEM_alu_output
   when(io.data_gnt_i && (io.EX_MEM_MemWr===1.U))
   {
     io.data_req_o := true.B
-    io.memAddress := io.EX_MEM_alu_output(13, 0).asSInt
+    //io.memAddress := io.EX_MEM_alu_output(13, 0).asSInt
     io.data_wdata_o := data_wdata
   } .elsewhen(io.data_gnt_i && (io.EX_MEM_MemRd === 1.U)) {
     io.data_req_o := true.B
-    io.memAddress := io.EX_MEM_alu_output(13, 0).asSInt
+    //io.memAddress := io.EX_MEM_alu_output(13, 0).asSInt
     io.data_wdata_o := DontCare
   } .otherwise
     {
       io.data_req_o := false.B
-      io.memAddress := DontCare
+      //io.memAddress := DontCare
       io.data_wdata_o        := DontCare
     }
 
@@ -277,9 +286,12 @@ class MemoryStage extends Module {
 
   io.rd_sel_out := io.EX_MEM_rd_sel
   io.ctrl_RegWr_out := io.EX_MEM_RegWr
+  io.ctrl_CsrWen_out := io.EX_MEM_CsrWe
   io.ctrl_MemRd_out := io.EX_MEM_MemRd
   io.ctrl_MemToReg_out := io.EX_MEM_MemToReg
-
+//  io.csr_addr_out := io.EX_MEM_csr_addr
+//  io.csr_op_out := io.EX_MEM_csr_op
+  io.csr_data_out := io.EX_MEM_csr_data
   /** ******************************************END****************************************************** */
 
 }

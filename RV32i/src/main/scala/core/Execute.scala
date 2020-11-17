@@ -9,6 +9,8 @@ class Execute extends Module {
     val ID_EX_rs1_sel = Input(UInt(5.W))
     val ID_EX_rs2_sel = Input(UInt(5.W))
     val EX_MEM_ctrl_RegWr = Input(UInt(1.W))
+    val EX_MEM_ctrl_csrWen = Input(Bool())    // used to detect if csr instruction in memory stage
+    val MEM_WB_ctrl_csrWen = Input(Bool())    // used to detect if csr instruction in writeback stage
     val MEM_WB_ctrl_RegWr = Input(UInt(1.W))
     val ID_EX_ctrl_OpA_sel = Input(UInt(2.W))
     val ID_EX_ctrl_OpB_sel = Input(UInt(1.W))
@@ -16,16 +18,22 @@ class Execute extends Module {
     val ID_EX_pc_out = Input(SInt(32.W))
     val ID_EX_rs1 = Input(SInt(32.W))
     val ID_EX_rs2 = Input(SInt(32.W))
+    val ID_EX_csr_data = Input(UInt(32.W))
     val EX_MEM_alu_output = Input(SInt(32.W))
+    val EX_MEM_csr_rdata = Input(UInt(32.W))  // used to forward csr data if instruction is dependent on csr inst in memory stage
+    val MEM_WB_csr_rdata = Input(UInt(32.W))  // used to forward csr data if instruction is dependent on csr inst in write back stage
     val writeback_write_data = Input(SInt(32.W))
     val ID_EX_imm = Input(SInt(32.W))
+//    val ID_EX_csr_op = Input(UInt(2.W))
     val ID_EX_ctrl_AluOp = Input(UInt(4.W))
     val ID_EX_func7 = Input(UInt(7.W))
+    val ID_EX_inst_op = Input(UInt(7.W))
     val ID_EX_func3 = Input(UInt(3.W))
     val ID_EX_rd_sel = Input(UInt(5.W))
     val ID_EX_ctrl_MemWr = Input(UInt(1.W))
     val ID_EX_ctrl_MemRd = Input(UInt(1.W))
     val ID_EX_ctrl_RegWr = Input(UInt(1.W))
+    val ID_EX_ctrl_CsrWen = Input(Bool())
     val ID_EX_ctrl_MemToReg = Input(UInt(1.W))
   //  val M_extension_enabled = Input(UInt(1.W))
 
@@ -37,8 +45,12 @@ class Execute extends Module {
     val ctrl_MemWr_out = Output(UInt(1.W))
     val ctrl_MemRd_out = Output(UInt(1.W))
     val ctrl_RegWr_out = Output(UInt(1.W))
+    val ctrl_CsrWe_out = Output(Bool())
     val ctrl_MemToReg_out = Output(UInt(1.W))
-    val func3_out        = Output(UInt(3.W)) 
+    val func3_out        = Output(UInt(3.W))
+    val csr_addr_out = Output(SInt(32.W))
+//    val csr_op_o = Output(UInt(2.W))
+    val csr_data_o = Output(UInt(32.W))
   })
 
 
@@ -47,6 +59,7 @@ class Execute extends Module {
   val alu_control = Module(new AluControl())
 
   // Initialize forward unit
+  forwardUnit.io.ID_EX_inst_op := io.ID_EX_inst_op
   forwardUnit.io.EX_MEM_REGRD := io.EX_MEM_rd_sel
   forwardUnit.io.MEM_WB_REGRD := io.MEM_WB_rd_sel
   forwardUnit.io.ID_EX_REGRS1 := io.ID_EX_rs1_sel
@@ -66,9 +79,9 @@ class Execute extends Module {
     when(forwardUnit.io.forward_a === "b00".U) {
       alu.io.oper_a := io.ID_EX_rs1
     } .elsewhen(forwardUnit.io.forward_a === "b01".U) {
-      alu.io.oper_a := io.EX_MEM_alu_output
+      alu.io.oper_a := Mux(io.EX_MEM_ctrl_csrWen, io.EX_MEM_csr_rdata.asSInt(), io.EX_MEM_alu_output)
     } .elsewhen(forwardUnit.io.forward_a === "b10".U) {
-      alu.io.oper_a := io.writeback_write_data
+      alu.io.oper_a := Mux(io.MEM_WB_ctrl_csrWen, io.MEM_WB_csr_rdata.asSInt(), io.writeback_write_data)
     } .otherwise {
       alu.io.oper_a := io.ID_EX_rs1
     }
@@ -80,9 +93,9 @@ class Execute extends Module {
     when(forwardUnit.io.forward_b === "b00".U) {
       io.rs2_out := io.ID_EX_rs2
     } .elsewhen(forwardUnit.io.forward_b === "b01".U) {
-      io.rs2_out := io.EX_MEM_alu_output
+      io.rs2_out := Mux(io.EX_MEM_ctrl_csrWen, io.EX_MEM_csr_rdata.asSInt(), io.EX_MEM_alu_output)
     } .elsewhen(forwardUnit.io.forward_b === "b10".U) {
-      io.rs2_out := io.writeback_write_data
+      io.rs2_out := Mux(io.MEM_WB_ctrl_csrWen, io.MEM_WB_csr_rdata.asSInt(), io.writeback_write_data)
     } .otherwise {
       io.rs2_out := io.ID_EX_rs2
     }
@@ -93,11 +106,11 @@ class Execute extends Module {
       alu.io.oper_b := io.ID_EX_rs2
       io.rs2_out := io.ID_EX_rs2
     } .elsewhen(forwardUnit.io.forward_b === "b01".U) {
-      alu.io.oper_b := io.EX_MEM_alu_output
-      io.rs2_out := io.EX_MEM_alu_output
+      alu.io.oper_b := Mux(io.EX_MEM_ctrl_csrWen, io.EX_MEM_csr_rdata.asSInt(), io.EX_MEM_alu_output)
+      io.rs2_out := Mux(io.EX_MEM_ctrl_csrWen, io.EX_MEM_csr_rdata.asSInt(), io.EX_MEM_alu_output)
     } .elsewhen(forwardUnit.io.forward_b === "b10".U) {
-      alu.io.oper_b := io.writeback_write_data
-      io.rs2_out := io.writeback_write_data
+      alu.io.oper_b := Mux(io.MEM_WB_ctrl_csrWen, io.MEM_WB_csr_rdata.asSInt(), io.writeback_write_data)
+      io.rs2_out := Mux(io.MEM_WB_ctrl_csrWen, io.MEM_WB_csr_rdata.asSInt(), io.writeback_write_data)
     } .otherwise {
       alu.io.oper_b := io.ID_EX_rs2
       io.rs2_out := io.ID_EX_rs2
@@ -124,8 +137,11 @@ class Execute extends Module {
   io.ctrl_MemWr_out := io.ID_EX_ctrl_MemWr
   io.ctrl_MemRd_out := io.ID_EX_ctrl_MemRd
   io.ctrl_RegWr_out := io.ID_EX_ctrl_RegWr
+  io.ctrl_CsrWe_out := io.ID_EX_ctrl_CsrWen
   io.ctrl_MemToReg_out := io.ID_EX_ctrl_MemToReg
-
+  io.csr_addr_out := io.ID_EX_imm
+//  io.csr_op_o := io.ID_EX_csr_op
+  io.csr_data_o := io.ID_EX_csr_data
 
 
 
