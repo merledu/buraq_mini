@@ -30,7 +30,7 @@ version := "3.1.0"
 
 name := "RV32i"
 
-scalaVersion := "2.11.12"
+scalaVersion := "2.12.12"
 
 crossScalaVersions := Seq("2.11.12", "2.12.4")
 
@@ -45,6 +45,8 @@ val defaultVersions = Map(
 
 libraryDependencies ++= (Seq("chisel3","chisel-iotesters").map {
   dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep)) })
+
+libraryDependencies += "com.github.merl" %% "caravan" % "0.1.0"
 
 resolvers ++= Seq(
   Resolver.sonatypeRepo("snapshots"),
