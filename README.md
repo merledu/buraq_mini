@@ -1,5 +1,6 @@
-# RISC-V 5-stage Pipelined Core
-### Designed by Muhammad Hadir Khan
+# Buraq-Mini: An In-Order Fully Bypassed RISC-V Core
+
+Buraq-Mini is a 5 stage pipelined processor which is made in Chisel from scratch and is used inside the "Ibtida SoC" which is selected for the first open-source ASIC tapeout in the Google + Efabless Open MPW Shuttle program.
 \
 \
 ![alt text](https://github.com/merledu/5-stage-Pipelined-CPU/blob/master/Pipeline.png)
