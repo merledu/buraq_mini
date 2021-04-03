@@ -1,0 +1,6 @@
+target/*
+.bsp/*
+.idea/*
+project/project/
+project/target/
+RV32i/project/target/
