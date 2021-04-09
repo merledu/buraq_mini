@@ -1,19 +1,22 @@
 package core
 
+import caravan.bus.wishbone.{Request, Response, WishboneConfig}
 import chisel3._
 import chisel3.util._
-import main.scala.core.csrs.{Exc_Cause}
+import main.scala.core.csrs.Exc_Cause
 
-class Fetch extends Module {
+class Fetch(implicit val config: WishboneConfig) extends Module {
   val io = IO(new Bundle {
     // ------------------------------------ //
     // instruction memory interface(inputs) //
     // ------------------------------------ //
     
-    val core_instr_gnt_i                             =       Input(Bool())
-    val core_instr_rvalid_i                          =       Input(Bool())
-    val core_instr_rdata_i                           =       Input(UInt(32.W))
+//    val core_instr_gnt_i                             =       Input(Bool())
+//    val core_instr_rvalid_i                          =       Input(Bool())
+//    val core_instr_rdata_i                           =       Input(UInt(32.W))
 
+    val coreInstrReq = Decoupled(new Request())
+    val coreInstrRsp = Flipped(Decoupled(new Response()))
     // ------------------------------------ //
     // csr register file(inputs/outputs)    //
     // ------------------------------------ //
@@ -51,8 +54,8 @@ class Fetch extends Module {
     // instruction memory interface(outputs) //
     // ------------------------------------- //
 
-    val core_instr_addr_o                            =       Output(UInt(32.W))
-    val core_instr_req_o                             =       Output(Bool())
+//    val core_instr_addr_o                            =       Output(UInt(32.W))
+//    val core_instr_req_o                             =       Output(Bool())
 
     // ------------------------------------- //
     //        decode stage (outputs)         //
@@ -63,33 +66,16 @@ class Fetch extends Module {
     val decode_if_id_inst_o                          =       Output(UInt(32.W))
   })
 
-  //                      ____________________s???s???s???s
-  //                      ___________________s$$$$$$s..s..?..?..?
-  //                      __________________$$$$$$$$$$$$s..s.?..?
-  //                      ____________________$$$$$$$$$$$$$$s…?
-  //                      ______________ s$$$$$$(O)$$$$$$$$$$$$.?
-  //                      ____________ €$$$$$$$$$$$$$$$$$$$$s..?..s
-  //                      _____________s$$$$$$$$$$$$$$$$$$$$$$s..?
-  //                      _____________________s$$$$$$$$$$$$$$..s..?
-  //                      ______________________$$$$$$$$$$$$s..s..?
-  //                      ______________________$$$$$$$$$$$$.s.?.s.?
-  //                      _____________________$$$$$$$$$$$$$s..s….?
-  //                      ____________________$$$$$$$$$$$$$$s_??s.?
-  //                      ___________________$$$$$$$$$$$$$$$s.s….?
-  //                      _____s$$$$________$$$$$$$$$$$$$$$$$..s?
-  //                      ____$$$$$$$$_____$$$$$$$$$$$$$$$$$$s…s
-  //                      ____$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$_s_?__s$s
-  //                      ____$$__$$$$$$$$$$$$$$$$$$$$$$$$$$_____s$$$
-  //                      ____$$____$$$$$$$$$$$$$$$$$$$$$$s_____s$$$$s
-  //                      ___$$$$$$$$$$$$$$$$$$$$$$$$$$_$$_____s$$$$$$
-  //                      __$$$$$$$$$$$$$$$$$$$$$$$$$$$$_$____s$$$$$$$
-  //                      __$$$$__$$$$$$$$$$$$$$$$$$$$$$$____s$$$$$$$$
-  //                      ___$$$________$$$$$$$$$$$$$$$$$$___s$$$$$$$
-  //                      ____$$$s______$$$$$$$$$$$$$$$$$$$__s$$$$$$
-  //                      _____$$$_______$$$$$$$$$$$$$$$$$$$_s$$
-
-
   val NOP = "b00000000000000000000000000010011".U(32.W) // NOP instruction
+
+  // fetch always ready to accept data from bus
+  io.coreInstrRsp.ready := true.B
+  // always fetch 32 bits instructions
+  io.coreInstrReq.bits.activeByteLane := "b1111".U
+  // always read for fetch
+  io.coreInstrReq.bits.isWrite := false.B
+  // data output is dont care for reads
+  io.coreInstrReq.bits.dataRequest := DontCare
 
   val pc = Module(new Pc())
 
@@ -118,11 +104,13 @@ class Fetch extends Module {
   io.csrRegFile_csr_save_cause_o := false.B
   io.csrRegFile_exc_cause_o := Exc_Cause.EXC_CAUSE_INSN_ADDR_MISA
   // Send the next pc value to the instruction memory
-  io.core_instr_addr_o := pc.io.in(13, 0).asUInt
+  io.coreInstrReq.bits.addrRequest := pc.io.in(13,0).asUInt()
+//  io.core_instr_addr_o := pc.io.in(13, 0).asUInt
   // if device is ready to accept the request then send a valid signal to fetch from.
-  io.core_instr_req_o := Mux(io.core_instr_gnt_i, true.B, false.B)
+  io.coreInstrReq.valid := Mux(io.coreInstrReq.ready, true.B, false.B)
+  //io.core_instr_req_o := Mux(io.core_instr_gnt_i, true.B, false.B)
   // wait for valid signal to arrive indicating the fetched instruction is valid otherwise send NOP
-  val instr = Mux(io.core_instr_rvalid_i, io.core_instr_rdata_i, NOP)
+  val instr = Mux(io.coreInstrRsp.valid, io.coreInstrRsp.bits.dataResponse, NOP)
 
   when(!io.core_stall_i && !halt_if) {
     // send the current pc value to the Decode stage

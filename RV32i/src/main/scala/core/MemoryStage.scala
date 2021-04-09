@@ -1,9 +1,10 @@
 package core
 
+import caravan.bus.wishbone.{Request, Response, WishboneConfig}
 import chisel3._
-import chisel3.util.Cat
+import chisel3.util.{Cat, Decoupled}
 
-class MemoryStage extends Module {
+class MemoryStage(implicit val config: WishboneConfig) extends Module {
   val io = IO(new Bundle {
     val EX_MEM_alu_output = Input(SInt(32.W))
     val EX_MEM_rd_sel = Input(UInt(5.W))
@@ -18,14 +19,16 @@ class MemoryStage extends Module {
 //    val EX_MEM_csr_op = Input(UInt(2.W))
     val EX_MEM_csr_data = Input(UInt(32.W))
 
-    val data_gnt_i   = Input(Bool())
-    val data_rvalid_i= Input(Bool())
-    val data_rdata_i = Input(SInt(32.W))
-    val data_req_o   = Output(Bool())
-    val data_be_o  = Output(Vec(4, Bool()))
-    val ctrl_MemWr_out = Output(UInt(1.W)) // data_we_o
-    val data_wdata_o = Output(Vec(4, SInt(8.W))) // data_wdata_o
-    val memAddress = Output(SInt(32.W)) // data_addr_o
+    val coreDccmReq = Decoupled(new Request())
+    val coreDccmRsp = Flipped(Decoupled(new Response()))
+    //val data_gnt_i   = Input(Bool())
+    //val data_rvalid_i= Input(Bool())
+    //val data_rdata_i = Input(SInt(32.W))
+    //val data_req_o   = Output(Bool())
+    //val data_be_o  = Output(Vec(4, Bool()))
+    //val ctrl_MemWr_out = Output(UInt(1.W)) // data_we_o
+    //val data_wdata_o = Output(Vec(4, SInt(8.W))) // data_wdata_o
+    //val memAddress = Output(SInt(32.W)) // data_addr_o
     val data_out   = Output(SInt(32.W))
 
 
@@ -47,18 +50,20 @@ class MemoryStage extends Module {
   val data_offset = io.EX_MEM_alu_output(1,0)
   val data_wdata = Wire(Vec(4, SInt(8.W)))
 
+  // core always ready to accept response from bus
+  io.coreDccmRsp.ready := true.B
 
   // Stalling the pipeline as soon as we get a load or store instruction
   // and the data received from memory is not valid.
   // As soon as we get a valid data from memory we pull down the stall.
 
-  io.stall := (io.EX_MEM_MemWr === 1.U || io.EX_MEM_MemRd === 1.U) && !io.data_rvalid_i
+  io.stall := (io.EX_MEM_MemWr === 1.U || io.EX_MEM_MemRd === 1.U) && !io.coreDccmRsp.valid
 
   /** |||||||||||||||||||||||||||||| INITIALIZING LOAD UNIT ||||||||||||||||||||||||||||||| */
 
   /** ******************************************START****************************************************** */
   load_unit.io.func3 := io.func3
-  load_unit.io.memData := io.data_rdata_i
+  load_unit.io.memData := io.coreDccmRsp.bits.dataResponse.asSInt()
   load_unit.io.data_offset := data_offset
   load_unit.io.en := false.B
 
@@ -82,118 +87,68 @@ class MemoryStage extends Module {
     /** !!!!!!!!!!!!!!!!!!!! STORE WORD !!!!!!!!!!!!!!!!!!!! */
     when(data_offset === "b00".U) {
       // addressing 0,4,8... location of memory, enable all mask bits to write 32 bits data.
-      for(i <- 0 until 4) {
-        io.data_be_o(i) := true.B
-      }
+      io.coreDccmReq.bits.activeByteLane := "b1111".U
       // data_be_o -> 1111
     } .elsewhen(data_offset === "b01".U) {
       // addressing 1,5,9... location of memory, enable 3 MSB mask bits to write data, ignore the first byte location
-      io.data_be_o(0) := false.B
-      for(i <- 1 until 4) {
-        io.data_be_o(i) := true.B
-      }
+      io.coreDccmReq.bits.activeByteLane := "b1110".U
       // data_be_o -> 1110
     } .elsewhen(data_offset === "b10".U) {
       // addressing 2,6,10... location of memory, enable first and second bytes to write data. Ignore the first two bytes
-      for(i <- 0 until 2) {
-        io.data_be_o(i) := false.B
-      }
-      for(i <- 2 until 4) {
-        io.data_be_o(i) := true.B
-      }
+      io.coreDccmReq.bits.activeByteLane := "b1100".U
       // data_be_o -> 1100
     } .elsewhen(data_offset === "b11".U) {
       // addressing 3,7,11... location of memory, enable just 1 MSB bit to write data. Ignore 3 LSB bytes.
-      for(i <- 0 until 3) {
-        io.data_be_o(i) := false.B
-      }
-      io.data_be_o(3) := true.B
+      io.coreDccmReq.bits.activeByteLane := "b1000".U
       // data_be_o -> 1000
     } .otherwise {
-      for(i <- 0 until 4) {
-        io.data_be_o(i) := true.B   // by default setting all bits of mask to 1.
-      }
+      io.coreDccmReq.bits.activeByteLane := "b1111".U
     }
 
   } .elsewhen(io.func3 === "b001".U && io.EX_MEM_MemWr === 1.U) {
     /** !!!!!!!!!!!!!!!!!!!! STORE HALF WORD !!!!!!!!!!!!!!!!!!!! */
     when(data_offset === "b00".U) {
       // addressing 0,4,8... location of memory, enable two LSB mask bits to write 16 bits data.
-      for(i <- 0 until 2) {
-        io.data_be_o(i) := true.B
-      }
-      for(i <- 2 until 4) {
-        io.data_be_o(i) := false.B
-      }
+      io.coreDccmReq.bits.activeByteLane := "b0011".U
       // data_be_o -> 0011
     } .elsewhen(data_offset === "b01".U) {
       // addressing 1,5,9... location of memory, enable 1st and 2nd MSB mask bits to write data, ignore the first and last byte location
-      io.data_be_o(0) := false.B
-      for(i <- 1 until 3) {
-        io.data_be_o(i) := true.B
-      }
-      io.data_be_o(3) := false.B
+      io.coreDccmReq.bits.activeByteLane := "b0110".U
       // data_be_o -> 0110
     } .elsewhen(data_offset === "b10".U) {
       // addressing 2,6,10... location of memory, enable 2 MSB mask bits to write data. Ignore the first two bytes
-      for(i <- 0 until 2) {
-        io.data_be_o(i) := false.B
-      }
-      for(i <- 2 until 4) {
-        io.data_be_o(i) := true.B
-      }
+      io.coreDccmReq.bits.activeByteLane := "b1100".U
       // data_be_o -> 1100
     } .elsewhen(data_offset === "b11".U) {
       // addressing 3,7,11... location of memory, enable just 1 MSB bit to write data. Ignore 3 LSB bytes.
-      for(i <- 0 until 3) {
-        io.data_be_o(i) := false.B
-      }
-      io.data_be_o(3) := true.B
+      io.coreDccmReq.bits.activeByteLane := "b1000".U
       // data_be_o -> 1000
     } .otherwise {
-      for(i <- 0 until 4) {
-        io.data_be_o(i) := true.B   // by default setting all bits of mask to 1.
-      }
+      io.coreDccmReq.bits.activeByteLane := "b1111".U
     }
   } .elsewhen(io.func3 === "b000".U && io.EX_MEM_MemWr === 1.U) {
     /** !!!!!!!!!!!!!!!!!!!! STORE BYTE !!!!!!!!!!!!!!!!!!!! */
     when(data_offset === "b00".U) {
       // addressing 0,4,8... location of memory, enable zeroth LSB mask bit to write 8 bits data.
-      io.data_be_o(0) := true.B
-      for(i <- 1 until 4) {
-        io.data_be_o(i) := false.B
-      }
+      io.coreDccmReq.bits.activeByteLane := "b0001".U
       // data_be_o -> 0001
     } .elsewhen(data_offset === "b01".U) {
       // addressing 1,5,9... location of memory, enable 1st  mask bit to write 8 bits data, ignore the zeroth, second and last byte location
-      io.data_be_o(0) := false.B
-      io.data_be_o(1) := true.B
-      for(i <- 2 until 4) {
-        io.data_be_o(i) := false.B
-      }
+      io.coreDccmReq.bits.activeByteLane := "b0010".U
       // data_be_o -> 0010
     } .elsewhen(data_offset === "b10".U) {
       // addressing 2,6,10... location of memory, enable 2 MSB mask bits to write data. Ignore the first two bytes
-      for(i <- 0 until 2) {
-        io.data_be_o(i) := false.B
-      }
-      io.data_be_o(2) := true.B
-      io.data_be_o(3) := false.B
+      io.coreDccmReq.bits.activeByteLane := "b0100".U
       // data_be_o -> 0100
     } .elsewhen(data_offset === "b11".U) {
       // addressing 3,7,11... location of memory, enable just 1 MSB bit to write data. Ignore 3 LSB bytes.
-      for(i <- 0 until 3) {
-        io.data_be_o(i) := false.B
-      }
-      io.data_be_o(3) := true.B
+      io.coreDccmReq.bits.activeByteLane := "b1000".U
       // data_be_o -> 1000
     } .otherwise {
-      for(i <- 0 until 4) {
-        io.data_be_o(i) := true.B   // by default setting all bits of mask to 1.
-      }
+      io.coreDccmReq.bits.activeByteLane := "b1111".U
     }
   } .otherwise {
-    io.data_be_o := DontCare
+    io.coreDccmReq.bits.activeByteLane := DontCare
   }
 
   /** ******************************************END****************************************************** */
@@ -237,21 +192,18 @@ class MemoryStage extends Module {
 
   /** ******************************************START****************************************************** */
 
-  io.memAddress := io.EX_MEM_alu_output
-  when(io.data_gnt_i && (io.EX_MEM_MemWr===1.U))
+  io.coreDccmReq.bits.addrRequest := io.EX_MEM_alu_output.asUInt()
+  when(io.coreDccmReq.ready && (io.EX_MEM_MemWr===1.U))
   {
-    io.data_req_o := true.B
-    //io.memAddress := io.EX_MEM_alu_output(13, 0).asSInt
-    io.data_wdata_o := data_wdata
-  } .elsewhen(io.data_gnt_i && (io.EX_MEM_MemRd === 1.U)) {
-    io.data_req_o := true.B
-    //io.memAddress := io.EX_MEM_alu_output(13, 0).asSInt
-    io.data_wdata_o := DontCare
+    io.coreDccmReq.valid := true.B
+    io.coreDccmReq.bits.dataRequest := data_wdata.asUInt()
+  } .elsewhen(io.coreDccmReq.ready && (io.EX_MEM_MemRd === 1.U)) {
+    io.coreDccmReq.valid := true.B
+    io.coreDccmReq.bits.dataRequest := DontCare
   } .otherwise
     {
-      io.data_req_o := false.B
-      //io.memAddress := DontCare
-      io.data_wdata_o        := DontCare
+      io.coreDccmReq.valid := false.B
+      io.coreDccmReq.bits.dataRequest := DontCare
     }
 
 
@@ -262,7 +214,7 @@ class MemoryStage extends Module {
 
   /** ******************************************START****************************************************** */
   // TODO lh,lhu,lb,lbu working correctly for word-aligned addresses only, need to align it with un-aligned addresses as well
-  when(io.data_rvalid_i && io.EX_MEM_MemRd === 1.U)
+  when(io.coreDccmRsp.valid && io.EX_MEM_MemRd === 1.U)
   {
     load_unit.io.en := true.B   // enabling the load_unit to now read and sign extend the valid data
 //    io.data_out     := io.data_rdata_i
@@ -281,7 +233,7 @@ class MemoryStage extends Module {
   /** |||||||||||||||||||||||||||| PASSING SIGNALS TO THE MEM/WB REGISTER |||||||||||||||||||||||||||| */
 
   /** ******************************************START****************************************************** */
-  io.ctrl_MemWr_out := io.EX_MEM_MemWr
+  io.coreDccmReq.bits.isWrite := io.EX_MEM_MemWr
   io.alu_output := io.EX_MEM_alu_output
 
   io.rd_sel_out := io.EX_MEM_rd_sel

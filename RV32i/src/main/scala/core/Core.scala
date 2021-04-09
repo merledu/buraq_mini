@@ -1,27 +1,34 @@
 package core
 
 import chisel3._
-import chisel3.util.Cat
+import chisel3.util.{Cat, Decoupled}
 import main.scala.core.csrs.CsrRegisterFile
+import caravan.bus.wishbone._
 
-class Core extends Module {
+class Core(implicit val conf: WishboneConfig) extends Module {
   val io = IO(new Bundle {
     // Data Memory Interface
-    val data_gnt_i      =      Input(Bool())
-    val data_rvalid_i   =      Input(Bool())
-    val data_rdata_i    =      Input(SInt(32.W))
-    val data_req_o      =      Output(Bool())
-    val data_we_o       =      Output(Bool())
-    val data_be_o       =      Output(Vec(4, Bool()))
-    val data_addr_o     =      Output(SInt(32.W))
-    val data_wdata_o    =      Output(Vec(4, SInt(8.W)))
+//    val data_gnt_i      =      Input(Bool())
+//    val data_rvalid_i   =      Input(Bool())
+//    val data_rdata_i    =      Input(SInt(32.W))
+//    val data_req_o      =      Output(Bool())
+//    val data_we_o       =      Output(Bool())
+//    val data_be_o       =      Output(Vec(4, Bool()))
+//    val data_addr_o     =      Output(SInt(32.W))
+//    val data_wdata_o    =      Output(Vec(4, SInt(8.W)))
 
+    val dmemReq = Decoupled(new Request())
+    val dmemRsp = Flipped(Decoupled(new Response()))
     // instruction memory interface
-    val instr_gnt_i     =      Input(Bool())
-    val instr_rvalid_i  =      Input(Bool())
-    val instr_rdata_i   =      Input(UInt(32.W))
-    val instr_req_o     =      Output(Bool())
-    val instr_addr_o    =      Output(UInt(32.W))
+//    val instr_gnt_i     =      Input(Bool())
+//    val instr_rvalid_i  =      Input(Bool())
+//    val instr_rdata_i   =      Input(UInt(32.W))
+//    val instr_req_o     =      Output(Bool())
+//    val instr_addr_o    =      Output(UInt(32.W))
+
+    val imemReq = Decoupled(new Request())
+    val imemRsp = Flipped(Decoupled(new Response()))
+
 
     // stall signal coming from SoC to stall until the UART writes into ICCM
     val stall_core_i    =      Input(Bool())
@@ -43,48 +50,16 @@ class Core extends Module {
   // stalling the core either for loads/stores or after initial boot up to wait until UART writes program into ICCM.
   val stall            =      memory_stage.io.stall || io.stall_core_i
 
-  // *********** ----------- CSR REGISTER FILE ----------- ********* //
-//  csrRegFile.io.i_hart_id                       :=      0.U
-//  csrRegFile.io.i_boot_addr                     :=      0.U
-//  csrRegFile.io.i_csr_mtvec_init                :=      fetch.io.csrRegFile_csr_mtvec_init_o
-//  csrRegFile.io.i_csr_access                    :=      MEM_WB.io.ctrl_CsrWen_out
-//  csrRegFile.io.i_csr_wdata                     :=      writeback.io.write_data.asUInt()  // data from rs1
-//  csrRegFile.io.i_csr_op                        :=      MEM_WB.io.csr_op_out
-//  csrRegFile.io.i_csr_op_en                     :=      MEM_WB.io.ctrl_CsrWen_out   // right now the operation enables when csr instruction is in writeback stage
-//  csrRegFile.io.i_csr_addr                      :=      MEM_WB.io.csr_addr_out(11,0).asUInt()
-//  csrRegFile.io.i_irq_software                  :=      false.B
-//  csrRegFile.io.i_irq_timer                     :=      false.B
-//  csrRegFile.io.i_irq_external                  :=      io.irq_external_i
-//  csrRegFile.io.i_nmi_mode                      :=      false.B
-//  csrRegFile.io.i_pc_if                         :=      fetch.io.csrRegFile_csr_if_pc_o
-//  csrRegFile.io.i_pc_id                         :=      0.U
-//  csrRegFile.io.i_pc_wb                         :=      0.U
-//  csrRegFile.io.i_csr_save_if                   :=      fetch.io.csrRegFile_csr_save_if_o
-//  csrRegFile.io.i_csr_save_id                   :=      false.B
-//  csrRegFile.io.i_csr_save_wb                   :=      false.B
-//  csrRegFile.io.i_csr_restore_mret              :=      decode.io.mret_inst_o
-//  csrRegFile.io.i_csr_restore_dret              :=      false.B
-//  csrRegFile.io.i_csr_mcause                    :=      fetch.io.csrRegFile_exc_cause_o
-//  csrRegFile.io.i_csr_save_cause                :=      fetch.io.csrRegFile_csr_save_cause_o
-//  csrRegFile.io.i_csr_mtval                     :=      0.U
-//  csrRegFile.io.i_instr_ret                     :=      false.B
-//  csrRegFile.io.i_iside_wait                    :=      false.B
-//  csrRegFile.io.i_jump                          :=      false.B
-//  csrRegFile.io.i_branch                        :=      false.B
-//  csrRegFile.io.i_branch_taken                  :=      false.B
-//  csrRegFile.io.i_mem_load                      :=      false.B
-//  csrRegFile.io.i_mem_store                     :=      false.B
-//  csrRegFile.io.i_dside_wait                    :=      false.B
-//  csrRegFile.io.i_debug_mode                    :=      false.B
-//  csrRegFile.io.i_debug_cause                   :=      0.U
-//  csrRegFile.io.i_debug_csr_save                :=      false.B
   // *********** ----------- INSTRUCTION FETCH (IF) STAGE ----------- ********* //
   fetch.io.core_init_mtvec_i                    :=      !io.stall_core_i
   fetch.io.core_stall_i                         :=      stall
   // instruction memory bus connections(inputs)
-  fetch.io.core_instr_gnt_i                     :=      io.instr_gnt_i
-  fetch.io.core_instr_rvalid_i                  :=      io.instr_rvalid_i
-  fetch.io.core_instr_rdata_i                   :=      io.instr_rdata_i
+  io.imemRsp.ready := true.B
+  io.imemReq <> fetch.io.coreInstrReq
+  fetch.io.coreInstrRsp <> io.imemRsp
+//  fetch.io.core_instr_gnt_i                     :=      io.instr_gnt_i
+//  fetch.io.core_instr_rvalid_i                  :=      io.instr_rvalid_i
+//  fetch.io.core_instr_rdata_i                   :=      io.instr_rdata_i
 
   // csr connections
   fetch.io.csrRegFile_irq_pending_i             :=      decode.io.fetch_irq_pending_o
@@ -107,8 +82,8 @@ class Core extends Module {
 
 
   //instruction memory bus connections(outputs)
-  io.instr_req_o                                :=      fetch.io.core_instr_req_o
-  io.instr_addr_o                               :=      fetch.io.core_instr_addr_o
+  //io.instr_req_o                                :=      fetch.io.core_instr_req_o
+  //io.instr_addr_o                               :=      fetch.io.core_instr_addr_o
   // *********** ----------- INSTRUCTION DECODE (ID) STAGE ----------- ********* //
 
   decode.io.IF_ID_inst                          :=      fetch.io.decode_if_id_inst_o
@@ -135,8 +110,8 @@ class Core extends Module {
   decode.io.alu_output                          :=      execute.io.alu_output
   decode.io.EX_MEM_alu_output                   :=      EX_MEM.io.alu_output
   decode.io.MEM_WB_alu_output                   :=      MEM_WB.io.alu_output
-  decode.io.dmem_memOut                         :=      io.data_rdata_i
-  decode.io.dccm_rvalid_i                       :=      io.data_rvalid_i
+  decode.io.dmem_memOut                         :=      io.dmemRsp.bits.dataResponse.asSInt()
+  decode.io.dccm_rvalid_i                       :=      io.dmemRsp.valid
   decode.io.fetch_csr_save_cause_i              :=      fetch.io.csrRegFile_csr_save_cause_o
   decode.io.fetch_exc_cause_i                   :=      fetch.io.csrRegFile_exc_cause_o
   decode.io.fetch_csr_save_if                   :=      fetch.io.csrRegFile_csr_save_if_o
@@ -250,14 +225,16 @@ class Core extends Module {
 //  memory_stage.io.EX_MEM_csr_op                 :=      EX_MEM.io.csr_op_out
   memory_stage.io.EX_MEM_csr_data               :=      EX_MEM.io.csr_data_o
 
-  memory_stage.io.data_gnt_i                    :=      io.data_gnt_i
-  memory_stage.io.data_rvalid_i                 :=      io.data_rvalid_i
-  memory_stage.io.data_rdata_i                  :=      io.data_rdata_i
-  io.data_req_o                                 :=      memory_stage.io.data_req_o
-  io.data_be_o                                  :=      memory_stage.io.data_be_o
-  io.data_we_o                                  :=      memory_stage.io.ctrl_MemWr_out
-  io.data_wdata_o                               :=      memory_stage.io.data_wdata_o
-  io.data_addr_o                                :=      memory_stage.io.memAddress
+  io.dmemReq <> memory_stage.io.coreDccmReq
+  memory_stage.io.coreDccmRsp <> io.dmemRsp
+//  memory_stage.io.data_gnt_i                    :=      io.data_gnt_i
+//  memory_stage.io.data_rvalid_i                 :=      io.data_rvalid_i
+//  memory_stage.io.data_rdata_i                  :=      io.data_rdata_i
+//  io.data_req_o                                 :=      memory_stage.io.data_req_o
+//  io.data_be_o                                  :=      memory_stage.io.data_be_o
+//  io.data_we_o                                  :=      memory_stage.io.ctrl_MemWr_out
+//  io.data_wdata_o                               :=      memory_stage.io.data_wdata_o
+//  io.data_addr_o                                :=      memory_stage.io.memAddress
 
 
   MEM_WB.io.stall                               :=      stall
