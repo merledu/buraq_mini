@@ -5,6 +5,10 @@ import chisel3.util.{Cat, Decoupled}
 import main.scala.core.csrs.CsrRegisterFile
 import caravan.bus.wishbone._
 
+object CoreParams {
+  val reset_vector = 0x0
+}
+
 class Core(implicit val conf: WishboneConfig) extends Module {
   val io = IO(new Bundle {
     // Data Memory Interface
