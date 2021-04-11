@@ -10,10 +10,6 @@ class Fetch(implicit val config: WishboneConfig) extends Module {
     // ------------------------------------ //
     // instruction memory interface(inputs) //
     // ------------------------------------ //
-    
-//    val core_instr_gnt_i                             =       Input(Bool())
-//    val core_instr_rvalid_i                          =       Input(Bool())
-//    val core_instr_rdata_i                           =       Input(UInt(32.W))
 
     val coreInstrReq = Decoupled(new Request())
     val coreInstrRsp = Flipped(Decoupled(new Response()))
@@ -50,12 +46,6 @@ class Fetch(implicit val config: WishboneConfig) extends Module {
 
     val core_stall_i                                 =       Input(Bool())
 
-    // ------------------------------------- //
-    // instruction memory interface(outputs) //
-    // ------------------------------------- //
-
-//    val core_instr_addr_o                            =       Output(UInt(32.W))
-//    val core_instr_req_o                             =       Output(Bool())
 
     // ------------------------------------- //
     //        decode stage (outputs)         //
@@ -108,6 +98,8 @@ class Fetch(implicit val config: WishboneConfig) extends Module {
 //  io.core_instr_addr_o := pc.io.in(13, 0).asUInt
   // if device is ready to accept the request then send a valid signal to fetch from.
   io.coreInstrReq.valid := Mux(io.coreInstrReq.ready, true.B, false.B)
+  // halt the pc if we cannot send data to the bus master
+  pc.io.halt := Mux(io.coreInstrReq.ready, false.B, true.B)
   //io.core_instr_req_o := Mux(io.core_instr_gnt_i, true.B, false.B)
   // wait for valid signal to arrive indicating the fetched instruction is valid otherwise send NOP
   val instr = Mux(io.coreInstrRsp.valid, io.coreInstrRsp.bits.dataResponse, NOP)
@@ -116,7 +108,7 @@ class Fetch(implicit val config: WishboneConfig) extends Module {
     // send the current pc value to the Decode stage
     if_id_pc_reg := pc.io.out
     // send the pc + 4 to the Decode stage
-    if_id_pc4_reg := pc.io.pc4
+    if_id_pc4_reg := pc.io.out + 4.S    // not using pc4 since it is halted
   }
 
   when(!io.core_stall_i && !halt_if) {
