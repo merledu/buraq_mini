@@ -21,14 +21,6 @@ class MemoryStage(implicit val config: WishboneConfig) extends Module {
 
     val coreDccmReq = Decoupled(new Request())
     val coreDccmRsp = Flipped(Decoupled(new Response()))
-    //val data_gnt_i   = Input(Bool())
-    //val data_rvalid_i= Input(Bool())
-    //val data_rdata_i = Input(SInt(32.W))
-    //val data_req_o   = Output(Bool())
-    //val data_be_o  = Output(Vec(4, Bool()))
-    //val ctrl_MemWr_out = Output(UInt(1.W)) // data_we_o
-    //val data_wdata_o = Output(Vec(4, SInt(8.W))) // data_wdata_o
-    //val memAddress = Output(SInt(32.W)) // data_addr_o
     val data_out   = Output(SInt(32.W))
 
 
@@ -61,19 +53,16 @@ class MemoryStage(implicit val config: WishboneConfig) extends Module {
 
   /** |||||||||||||||||||||||||||||| INITIALIZING LOAD UNIT ||||||||||||||||||||||||||||||| */
 
-  /** ******************************************START****************************************************** */
   load_unit.io.func3 := io.func3
   load_unit.io.memData := io.coreDccmRsp.bits.dataResponse.asSInt()
   load_unit.io.data_offset := data_offset
   load_unit.io.en := false.B
 
-  /** ******************************************END****************************************************** */
 
 
 
   /** |||||||||||||||||||||||||||||| SETTING MASK BITS FOR WRITE OPERATIONS ||||||||||||||||||||||||||||||| */
 
-  /** ******************************************START****************************************************** */
 
   /** Visualize memory as follows
    *      11          10        9         8  -> address
@@ -151,12 +140,9 @@ class MemoryStage(implicit val config: WishboneConfig) extends Module {
     io.coreDccmReq.bits.activeByteLane := DontCare
   }
 
-  /** ******************************************END****************************************************** */
-
 
   /** |||||||||||||||||||||||||||| ALIGNING DATA TO BE WRITTEN INTO THE MEMORY |||||||||||||||||||||||||||| */
 
-  /** ******************************************START****************************************************** */
 
   when(data_offset === "b00".U) {
     data_wdata(0) := io.EX_MEM_rs2(7,0).asSInt()
@@ -185,12 +171,9 @@ class MemoryStage(implicit val config: WishboneConfig) extends Module {
     data_wdata(3) := io.EX_MEM_rs2(31,24).asSInt()
   }
 
-  /** ******************************************END****************************************************** */
 
+  /** |||||||||||||||||||||||||||| GENERATING WRITE/READ REQUEST TO BUS |||||||||||||||||||||||||||| */
 
-  /** |||||||||||||||||||||||||||| GENERATING WRITE/READ REQUEST TO TILELINK |||||||||||||||||||||||||||| */
-
-  /** ******************************************START****************************************************** */
 
   io.coreDccmReq.bits.addrRequest := io.EX_MEM_alu_output.asUInt()
   when(io.coreDccmReq.ready && (io.EX_MEM_MemWr===1.U))
@@ -207,12 +190,8 @@ class MemoryStage(implicit val config: WishboneConfig) extends Module {
     }
 
 
-  /** ******************************************END****************************************************** */
-
-
   /** |||||||||||||||||||||||||||| READING DATA FROM MEMORY IN NEXT CLOCK CYCLE |||||||||||||||||||||||||||| */
 
-  /** ******************************************START****************************************************** */
   // TODO lh,lhu,lb,lbu working correctly for word-aligned addresses only, need to align it with un-aligned addresses as well
   when(io.coreDccmRsp.valid && io.EX_MEM_MemRd === 1.U)
   {
@@ -226,13 +205,9 @@ class MemoryStage(implicit val config: WishboneConfig) extends Module {
     }
 
 
-  /** ******************************************END****************************************************** */
-
-
 
   /** |||||||||||||||||||||||||||| PASSING SIGNALS TO THE MEM/WB REGISTER |||||||||||||||||||||||||||| */
 
-  /** ******************************************START****************************************************** */
   io.coreDccmReq.bits.isWrite := io.EX_MEM_MemWr
   io.alu_output := io.EX_MEM_alu_output
 
@@ -241,9 +216,6 @@ class MemoryStage(implicit val config: WishboneConfig) extends Module {
   io.ctrl_CsrWen_out := io.EX_MEM_CsrWe
   io.ctrl_MemRd_out := io.EX_MEM_MemRd
   io.ctrl_MemToReg_out := io.EX_MEM_MemToReg
-//  io.csr_addr_out := io.EX_MEM_csr_addr
-//  io.csr_op_out := io.EX_MEM_csr_op
   io.csr_data_out := io.EX_MEM_csr_data
-  /** ******************************************END****************************************************** */
 
 }
