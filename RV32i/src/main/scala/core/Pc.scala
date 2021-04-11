@@ -7,11 +7,12 @@ class Pc extends Module {
         val in = Input(SInt(32.W))
         val out = Output(SInt(32.W))
         val pc4 = Output(SInt(32.W))
+        val halt = Input(Bool())
     })
 
-    val reg = RegInit(48.S(32.W) - 4.S(32.W))    // 44 -> 0x30 is base address of program memory
+    val reg = RegInit((CoreParams.reset_vector - 0x4).asSInt(32.W))
     reg := io.in
-    io.pc4 := reg + 4.S
+    io.pc4 := Mux(io.halt, reg, reg + 4.S)
     io.out := reg
 //    when(io.instr_gnt_i)
 //    {
