@@ -1,6 +1,6 @@
 package core
 
-import caravan.bus.wishbone.{Request, Response, WishboneConfig}
+import caravan.bus.wishbone.{WBRequest, WBResponse, WishboneConfig}
 import chisel3._
 import chisel3.util._
 import main.scala.core.csrs.Exc_Cause
@@ -11,8 +11,8 @@ class Fetch(implicit val config: WishboneConfig) extends Module {
     // instruction memory interface(inputs) //
     // ------------------------------------ //
 
-    val coreInstrReq = Decoupled(new Request())
-    val coreInstrRsp = Flipped(Decoupled(new Response()))
+    val coreInstrReq = Decoupled(new WBRequest())
+    val coreInstrRsp = Flipped(Decoupled(new WBResponse()))
     // ------------------------------------ //
     // csr register file(inputs/outputs)    //
     // ------------------------------------ //

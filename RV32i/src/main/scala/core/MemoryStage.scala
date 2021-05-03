@@ -1,6 +1,6 @@
 package core
 
-import caravan.bus.wishbone.{Request, Response, WishboneConfig}
+import caravan.bus.wishbone.{WBRequest, WBResponse, WishboneConfig}
 import chisel3._
 import chisel3.util.{Cat, Decoupled}
 
@@ -19,8 +19,8 @@ class MemoryStage(implicit val config: WishboneConfig) extends Module {
 //    val EX_MEM_csr_op = Input(UInt(2.W))
     val EX_MEM_csr_data = Input(UInt(32.W))
 
-    val coreDccmReq = Decoupled(new Request())
-    val coreDccmRsp = Flipped(Decoupled(new Response()))
+    val coreDccmReq = Decoupled(new WBRequest())
+    val coreDccmRsp = Flipped(Decoupled(new WBResponse()))
     val data_out   = Output(SInt(32.W))
 
 

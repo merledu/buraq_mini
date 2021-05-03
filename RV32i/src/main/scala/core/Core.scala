@@ -21,8 +21,8 @@ class Core(implicit val conf: WishboneConfig) extends Module {
 //    val data_addr_o     =      Output(SInt(32.W))
 //    val data_wdata_o    =      Output(Vec(4, SInt(8.W)))
 
-    val dmemReq = Decoupled(new Request())
-    val dmemRsp = Flipped(Decoupled(new Response()))
+    val dmemReq = Decoupled(new WBRequest())
+    val dmemRsp = Flipped(Decoupled(new WBResponse()))
     // instruction memory interface
 //    val instr_gnt_i     =      Input(Bool())
 //    val instr_rvalid_i  =      Input(Bool())
@@ -30,8 +30,8 @@ class Core(implicit val conf: WishboneConfig) extends Module {
 //    val instr_req_o     =      Output(Bool())
 //    val instr_addr_o    =      Output(UInt(32.W))
 
-    val imemReq = Decoupled(new Request())
-    val imemRsp = Flipped(Decoupled(new Response()))
+    val imemReq = Decoupled(new WBRequest())
+    val imemRsp = Flipped(Decoupled(new WBResponse()))
 
 
     // stall signal coming from SoC to stall until the UART writes into ICCM
