@@ -1,0 +1,3 @@
+[submodule "RV32i/caravan"]
+	path = RV32i/caravan
+	url = https://github.com/merledu/caravan.git
