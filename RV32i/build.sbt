@@ -36,6 +36,9 @@ crossScalaVersions := Seq("2.11.12", "2.12.4")
 
 scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked", "-language:reflectiveCalls")
 
+lazy val caravan = (project in file("caravan"))
+dependsOn(caravan)
+
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
 // The following are the current "release" versions.
 val defaultVersions = Map(
@@ -46,7 +49,8 @@ val defaultVersions = Map(
 libraryDependencies ++= (Seq("chisel3","chisel-iotesters").map {
   dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep)) })
 
-libraryDependencies += "com.github.merl" %% "caravan" % "0.1.0"
+libraryDependencies += "edu.berkeley.cs" %% "chiseltest" % "0.3.2" % "test"
+
 
 resolvers ++= Seq(
   Resolver.sonatypeRepo("snapshots"),
