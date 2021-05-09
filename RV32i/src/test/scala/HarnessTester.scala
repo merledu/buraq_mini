@@ -15,7 +15,7 @@ class HarnessTester extends FreeSpec with ChiselScalatestTester {
     }
   }
   "it should work" in {
-    implicit val config = WishboneConfig(10, 32)
+    implicit val config = WishboneConfig(32, 32)
     val programFile = getFile
     test(new Harness(programFile)).withAnnotations(Seq(VerilatorBackendAnnotation)) {c =>
       c.clock.step(100)
