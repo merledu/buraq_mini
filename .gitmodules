@@ -1,6 +1,0 @@
-[submodule "RV32i/caravan"]
-	path = RV32i/caravan
-	url = https://github.com/merledu/caravan.git
-[submodule "RV32i/jigsaw"]
-	path = RV32i/jigsaw
-	url = https://github.com/merledu/jigsaw.git
