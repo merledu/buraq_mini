@@ -4,3 +4,4 @@ target/*
 project/project/
 project/target/
 RV32i/project/target/
+test_run_dir/*
