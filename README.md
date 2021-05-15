@@ -16,7 +16,7 @@ In order to properly build the project you need to recursively clone the nested 
 Here are the steps for properly cloning the submodules and verify if everything is running fine:
 
 ```bash
-cd buraq-mini
+cd buraq_mini
 git submodule update --init --recursive
 sbt test
 ```
