@@ -8,7 +8,7 @@ Buraq-Mini is a 5 stage pipelined processor which is made in Chisel from scratch
 \
 First of all get started by cloning this repository on your machine.  
 ```bash
-git clone -b decoupled-interface https://github.com/merledu/buraq-mini.git
+git clone -b decoupled-interface https://github.com/merledu/buraq_mini.git
 ```
 There is a _harness_ in the project: `src/main/scala/Harness.scala` which is used for testing the core. It instantiates the core, uses [Jigsaw](https://github.com/merledu/jigsaw) to create block rams that act as instruction memory and data memory, and use [Caravan](https://github.com/merledu/caravan) to create a Wishbone bus interconnect for communication between the core and these memories.
 
