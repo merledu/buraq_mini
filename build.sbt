@@ -40,7 +40,7 @@ lazy val caravan = project in file("Caravan")
 
 lazy val jigsaw = (project in file("jigsaw")).dependsOn(caravan)
 
-lazy val root = (project in file(".")).dependsOn(caravan, jigsaw)
+dependsOn(caravan, jigsaw)
 
 
 // Provide a managed dependency on X if -DXVersion="" is supplied on the command line.
@@ -48,7 +48,7 @@ lazy val root = (project in file(".")).dependsOn(caravan, jigsaw)
 val defaultVersions = Map(
   "chisel3" -> "3.4.2",
   "chisel-iotesters" -> "1.5.0"
-  )
+)
 
 libraryDependencies ++= (Seq("chisel3","chisel-iotesters").map {
   dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep)) })
