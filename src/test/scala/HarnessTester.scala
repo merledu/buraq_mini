@@ -1,3 +1,4 @@
+import caravan.bus.native.{NativeConfig, NativeRequest, NativeResponse}
 import caravan.bus.wishbone.WishboneConfig
 import chisel3._
 import org.scalatest._
@@ -15,9 +16,9 @@ class HarnessTester extends FreeSpec with ChiselScalatestTester {
     }
   }
   "it should work" in {
-    implicit val config = WishboneConfig(32, 32)
+    implicit val config = NativeConfig(32,32)
     val programFile = getFile
-    test(new Harness(programFile)).withAnnotations(Seq(VerilatorBackendAnnotation)) {c =>
+    test(new Harness(new NativeRequest(), new NativeResponse(), programFile)).withAnnotations(Seq(VerilatorBackendAnnotation)) {c =>
       c.clock.step(100)
     }
   }

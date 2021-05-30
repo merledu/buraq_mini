@@ -1,37 +1,24 @@
 package buraq_mini.core
 
+import caravan.bus.common.{AbstrRequest, AbstrResponse, BusConfig}
 import chisel3._
 import chisel3.util.{Cat, Decoupled}
-import main.scala.core.csrs.CsrRegisterFile
-import caravan.bus.wishbone._
 
 object CoreParams {
   val reset_vector = 0x0
 }
 
-class Core(implicit val conf: WishboneConfig) extends Module {
+class Core[A <: AbstrRequest, B <: AbstrResponse, C <: BusConfig]
+          (gen: A, gen1: B)
+          (implicit val config: C) extends Module {
   val io = IO(new Bundle {
     // Data Memory Interface
-//    val data_gnt_i      =      Input(Bool())
-//    val data_rvalid_i   =      Input(Bool())
-//    val data_rdata_i    =      Input(SInt(32.W))
-//    val data_req_o      =      Output(Bool())
-//    val data_we_o       =      Output(Bool())
-//    val data_be_o       =      Output(Vec(4, Bool()))
-//    val data_addr_o     =      Output(SInt(32.W))
-//    val data_wdata_o    =      Output(Vec(4, SInt(8.W)))
+    val dmemReq = Decoupled(gen)
+    val dmemRsp = Flipped(Decoupled(gen1))
 
-    val dmemReq = Decoupled(new WBRequest())
-    val dmemRsp = Flipped(Decoupled(new WBResponse()))
     // instruction memory interface
-//    val instr_gnt_i     =      Input(Bool())
-//    val instr_rvalid_i  =      Input(Bool())
-//    val instr_rdata_i   =      Input(UInt(32.W))
-//    val instr_req_o     =      Output(Bool())
-//    val instr_addr_o    =      Output(UInt(32.W))
-
-    val imemReq = Decoupled(new WBRequest())
-    val imemRsp = Flipped(Decoupled(new WBResponse()))
+    val imemReq = Decoupled(gen)
+    val imemRsp = Flipped(Decoupled(gen1))
 
 
     // stall signal coming from SoC to stall until the UART writes into ICCM
@@ -45,10 +32,10 @@ class Core(implicit val conf: WishboneConfig) extends Module {
   val ID_EX            =      Module(new           ID_EX())
   val EX_MEM           =      Module(new          EX_MEM())
   val MEM_WB           =      Module(new          MEM_WB())
-  val fetch            =      Module(new           Fetch())
+  val fetch            =      Module(new           Fetch(gen, gen1))
   val decode           =      Module(new          Decode())
   val execute          =      Module(new         Execute())
-  val memory_stage     =      Module(new     MemoryStage())
+  val memory_stage     =      Module(new     MemoryStage(gen, gen1))
   val writeback        =      Module(new       WriteBack())
 
   // stalling the buraq_mini.core either for loads/stores or after initial boot up to wait until UART writes program into ICCM.
@@ -61,9 +48,6 @@ class Core(implicit val conf: WishboneConfig) extends Module {
   io.imemRsp.ready := true.B
   io.imemReq <> fetch.io.coreInstrReq
   fetch.io.coreInstrRsp <> io.imemRsp
-//  fetch.io.core_instr_gnt_i                     :=      io.instr_gnt_i
-//  fetch.io.core_instr_rvalid_i                  :=      io.instr_rvalid_i
-//  fetch.io.core_instr_rdata_i                   :=      io.instr_rdata_i
 
   // csr connections
   fetch.io.csrRegFile_irq_pending_i             :=      decode.io.fetch_irq_pending_o

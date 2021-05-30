@@ -1,18 +1,20 @@
 package buraq_mini.core
 
+import caravan.bus.common.{AbstrRequest, AbstrResponse, BusConfig}
 import caravan.bus.wishbone.{WBRequest, WBResponse, WishboneConfig}
 import chisel3._
 import chisel3.util._
 import main.scala.core.csrs.Exc_Cause
 
-class Fetch(implicit val config: WishboneConfig) extends Module {
+class Fetch[A <: AbstrRequest, B <: AbstrResponse, C <: BusConfig]
+           (gen: A, gen1: B)
+           (implicit val config: C) extends Module {
   val io = IO(new Bundle {
     // ------------------------------------ //
     // instruction memory interface(inputs) //
     // ------------------------------------ //
-
-    val coreInstrReq = Decoupled(new WBRequest())
-    val coreInstrRsp = Flipped(Decoupled(new WBResponse()))
+    val coreInstrReq = Decoupled(gen)
+    val coreInstrRsp = Flipped(Decoupled(gen1))
     // ------------------------------------ //
     // csr register file(inputs/outputs)    //
     // ------------------------------------ //

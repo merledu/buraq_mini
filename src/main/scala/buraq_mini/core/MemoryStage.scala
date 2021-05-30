@@ -1,10 +1,12 @@
 package buraq_mini.core
 
-import caravan.bus.wishbone.{WBRequest, WBResponse, WishboneConfig}
+import caravan.bus.common.{AbstrRequest, AbstrResponse, BusConfig}
 import chisel3._
 import chisel3.util.{Cat, Decoupled}
 
-class MemoryStage(implicit val config: WishboneConfig) extends Module {
+class MemoryStage[A <: AbstrRequest, B <: AbstrResponse, C <: BusConfig]
+                 (gen: A, gen1: B)
+                 (implicit val config: C) extends Module {
   val io = IO(new Bundle {
     val EX_MEM_alu_output = Input(SInt(32.W))
     val EX_MEM_rd_sel = Input(UInt(5.W))
@@ -19,8 +21,8 @@ class MemoryStage(implicit val config: WishboneConfig) extends Module {
 //    val EX_MEM_csr_op = Input(UInt(2.W))
     val EX_MEM_csr_data = Input(UInt(32.W))
 
-    val coreDccmReq = Decoupled(new WBRequest())
-    val coreDccmRsp = Flipped(Decoupled(new WBResponse()))
+    val coreDccmReq = Decoupled(gen)
+    val coreDccmRsp = Flipped(Decoupled(gen1))
     val data_out   = Output(SInt(32.W))
 
 

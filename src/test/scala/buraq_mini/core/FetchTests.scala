@@ -1,7 +1,8 @@
 package buraq_mini.core
+import caravan.bus.common.{AbstrRequest, AbstrResponse, BusConfig}
 import chisel3.iotesters.PeekPokeTester
 
-class FetchTests(c: Fetch) extends PeekPokeTester(c) {
+class FetchTests[A <: AbstrRequest, B <: AbstrResponse, C <: BusConfig](c: Fetch[A,B,C]) extends PeekPokeTester(c) {
   poke(c.io.decode_sb_imm_i, 0)
   poke(c.io.decode_uj_imm_i, 0)
   poke(c.io.decode_jalr_imm_i, 0)

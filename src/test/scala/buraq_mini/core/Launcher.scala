@@ -1,6 +1,7 @@
 // See LICENSE.txt for license details.
 package buraq_mini.core
 
+import caravan.bus.native.{NativeConfig, NativeRequest, NativeResponse}
 import caravan.bus.wishbone.WishboneConfig
 import chisel3.iotesters.{Driver, TesterOptionsManager}
 //import merl.uit.tilelink.{MasterInterface, SlaveInterface}
@@ -104,8 +105,8 @@ object Launcher {
         }
       },
       "Fetch" -> { (manager: TesterOptionsManager) => {
-        implicit val config = WishboneConfig(10, 32, 8)
-        Driver.execute(() => new Fetch(), manager) {
+        implicit val config = NativeConfig(32, 32)
+        Driver.execute(() => new Fetch(new NativeRequest(), new NativeResponse()), manager) {
           (c) => new FetchTests(c)
         }
       }
@@ -126,8 +127,8 @@ object Launcher {
         }
       },
       "MemoryStage" -> { (manager: TesterOptionsManager) => {
-        implicit val config = WishboneConfig(10, 32, 8)
-        Driver.execute(() => new MemoryStage(), manager) {
+        implicit val config = NativeConfig(32, 32)
+        Driver.execute(() => new MemoryStage(new NativeRequest(), new NativeResponse()), manager) {
           (c) => new MemoryStageTests(c)
         }
       }
@@ -153,8 +154,8 @@ object Launcher {
         }
       },
       "Core" -> { (manager: TesterOptionsManager) => {
-        implicit val config = WishboneConfig(10, 32, 8)
-        Driver.execute(() => new Core(), manager) {
+        implicit val config = NativeConfig(32, 32)
+        Driver.execute(() => new Core(new NativeRequest(), new NativeResponse()), manager) {
           (c) => new CoreTests(c)
         }
       }
