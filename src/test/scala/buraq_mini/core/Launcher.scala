@@ -103,13 +103,13 @@ object Launcher {
           (c) => new StructuralDetectorTests(c)
         }
       },
-      "Fetch" -> { (manager: TesterOptionsManager) => {
-        implicit val config = WishboneConfig(10, 32, 8)
-        Driver.execute(() => new Fetch(), manager) {
-          (c) => new FetchTests(c)
-        }
-      }
-      },
+      // "Fetch" -> { (manager: TesterOptionsManager) => {
+      //   implicit val config = WishboneConfig(10, 32, 8)
+      //   Driver.execute(() => new Fetch(), manager) {
+      //     (c) => new FetchTests(c)
+      //   }
+      // }
+      // },
       "Decode" -> { (manager: TesterOptionsManager) =>
         Driver.execute(() => new Decode(), manager) {
           (c) => new DecodeTests(c)
@@ -125,13 +125,13 @@ object Launcher {
           (c) => new ExecuteTests(c)
         }
       },
-      "MemoryStage" -> { (manager: TesterOptionsManager) => {
-        implicit val config = WishboneConfig(10, 32, 8)
-        Driver.execute(() => new MemoryStage(), manager) {
-          (c) => new MemoryStageTests(c)
-        }
-      }
-      },
+      // "MemoryStage" -> { (manager: TesterOptionsManager) => {
+      //   implicit val config = WishboneConfig(10, 32, 8)
+      //   Driver.execute(() => new MemoryStage(), manager) {
+      //     (c) => new MemoryStageTests(c)
+      //   }
+      // }
+      // },
       "Staller" -> { (manager: TesterOptionsManager) =>
         Driver.execute(() => new Staller(), manager) {
           (c) => new StallerTests(c)
@@ -151,14 +151,14 @@ object Launcher {
         Driver.execute(() => new Foo(), manager) {
           (c) => new FooTests(c)
         }
-      },
-      "Core" -> { (manager: TesterOptionsManager) => {
-        implicit val config = WishboneConfig(10, 32, 8)
-        Driver.execute(() => new Core(), manager) {
-          (c) => new CoreTests(c)
-        }
       }
-      }
+      // "Core" -> { (manager: TesterOptionsManager) => {
+      //   implicit val config = WishboneConfig(10, 32, 8)
+      //   Driver.execute(() => new Core(), manager) {
+      //     (c) => new CoreTests(c)
+      //   }
+      // }
+      // }
   )
   def main(args: Array[String]): Unit = {
     TutorialRunner("examples", examples, args)

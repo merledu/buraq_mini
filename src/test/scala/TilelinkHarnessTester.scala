@@ -1,4 +1,4 @@
-import caravan.bus.wishbone.WishboneConfig
+import caravan.bus.tilelink.TilelinkConfig
 import chisel3._
 import org.scalatest._
 import chiseltest._
@@ -6,7 +6,7 @@ import chiseltest.ChiselScalatestTester
 import chiseltest.internal.VerilatorBackendAnnotation
 import chiseltest.experimental.TestOptionBuilder._
 import org.scalatest.FreeSpec
-class HarnessTester extends FreeSpec with ChiselScalatestTester {
+class TilelinkHarnessTester extends FreeSpec with ChiselScalatestTester {
   def getFile: Option[String] = {
     if (scalaTestContext.value.get.configMap.contains("memFile")) {
       Some(scalaTestContext.value.get.configMap("memFile").toString)
@@ -15,9 +15,9 @@ class HarnessTester extends FreeSpec with ChiselScalatestTester {
     }
   }
   "it should work" in {
-    implicit val config = WishboneConfig(32, 32)
+    implicit val config = TilelinkConfig()
     val programFile = getFile
-    test(new Harness(programFile)).withAnnotations(Seq(VerilatorBackendAnnotation)) {c =>
+    test(new TilelinkHarness(programFile)).withAnnotations(Seq(VerilatorBackendAnnotation)) {c =>
       c.clock.step(100)
     }
   }
