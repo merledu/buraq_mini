@@ -1,6 +1,5 @@
 package buraq_mini.core
 
-// import caravan.bus.wishbone.{WBRequest, WBResponse, WishboneConfig}
 import caravan.bus.common.{BusConfig, AbstrRequest, AbstrResponse}
 import chisel3._
 import chisel3.util._
