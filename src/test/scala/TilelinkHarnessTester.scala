@@ -18,7 +18,7 @@ class TilelinkHarnessTester extends FreeSpec with ChiselScalatestTester {
     implicit val config = TilelinkConfig()
     val programFile = getFile
     test(new TilelinkHarness(programFile)).withAnnotations(Seq(VerilatorBackendAnnotation)) {c =>
-      c.clock.step(100)
+      c.clock.step(800)
     }
   }
 }
