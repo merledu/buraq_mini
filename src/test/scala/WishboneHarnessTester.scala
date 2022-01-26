@@ -6,7 +6,7 @@ import chiseltest.ChiselScalatestTester
 import chiseltest.internal.VerilatorBackendAnnotation
 import chiseltest.experimental.TestOptionBuilder._
 import org.scalatest.FreeSpec
-class HarnessTester extends FreeSpec with ChiselScalatestTester {
+class WishboneHarnessTester extends FreeSpec with ChiselScalatestTester {
   def getFile: Option[String] = {
     if (scalaTestContext.value.get.configMap.contains("memFile")) {
       Some(scalaTestContext.value.get.configMap("memFile").toString)
@@ -17,7 +17,7 @@ class HarnessTester extends FreeSpec with ChiselScalatestTester {
   "it should work" in {
     implicit val config = WishboneConfig(32, 32)
     val programFile = getFile
-    test(new Harness(programFile)).withAnnotations(Seq(VerilatorBackendAnnotation)) {c =>
+    test(new WishboneHarness(programFile)).withAnnotations(Seq(VerilatorBackendAnnotation)) {c =>
       c.clock.step(100)
     }
   }
